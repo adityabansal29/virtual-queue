@@ -1,0 +1,123 @@
+# Requirements: Virtual Queue System
+
+**Defined:** 2026-08-02
+**Core Value:** A waiting user must always see an accurate position, and an admitted user must always be let through exactly once — no skips, no duplicates, no queue bypass.
+
+## v1 Requirements
+
+### Queue Core
+
+- [ ] **QUEUE-01**: User can join the queue and receive a unique ticketId (POST /queue/join → ZADD with join-timestamp score)
+- [ ] **QUEUE-02**: User can poll their queue position (GET /queue/status/:id?mode=poll — stateless ZRANK read, connection closes immediately)
+- [ ] **QUEUE-03**: Poll response includes `upgrade_to_sse: true` hint when rank < SSE_THRESHOLD (default 200)
+- [ ] **QUEUE-04**: User can connect via SSE to receive real-time position updates when near the front (GET /queue/status/:id?mode=sse)
+- [ ] **QUEUE-05**: SSE handler subscribes to `queue:tick:{eventId}` and `ticket:updates:{ticketId}` pub/sub channels before reading initial rank (avoids race)
+- [ ] **QUEUE-06**: Admission scheduler ticks every second and admits min(rate, headroom) users via atomic ZPOPMIN
+- [ ] **QUEUE-07**: Scheduler holds a distributed leader lock (Redis SETNX NX+TTL) so only one instance admits per tick
+- [ ] **QUEUE-08**: Admitted token is written to `ticket:{ticketId}` hash field `admission_token` for poll-tier pickup (in addition to pub/sub publish)
+- [ ] **QUEUE-09**: User can call POST /queue/exit to proactively decrement `active:{eventId}` and free their slot
+
+### Token & Security
+
+- [ ] **TOKEN-01**: Scheduler issues HMAC-signed JWT (q_admission) with claims: JTI, eventId, ticketId, iat, exp (30min), signed with ADMISSION_SECRET
+- [ ] **TOKEN-02**: ADMISSION_SECRET and SESSION_SECRET are two independent keys — compromise of one does not expose the other
+- [ ] **TOKEN-03**: Go middleware (EdgeWorker-equivalent) verifies q_session with SESSION_SECRET or q_admission with ADMISSION_SECRET inline (no Redis call), redirects if missing/invalid/expired
+- [ ] **TOKEN-04**: Origin QueueGuard performs SETNX on `token:{jti}` (TTL 30min) after valid JWT check — SETNX fail → 403 (token already used)
+- [ ] **TOKEN-05**: QueueGuard increments `active:{eventId}` after successful SETNX and issues q_session cookie signed with SESSION_SECRET
+- [ ] **TOKEN-06**: QueueGuard clears q_admission cookie and passes request to business handler on success
+- [ ] **TOKEN-07**: `active:{eventId}` counter tracks live concurrency; scheduler reads it every tick and computes headroom = capacity - active; zero headroom → skip tick
+
+### Frontend
+
+- [ ] **UI-01**: Queue waiting page is a static HTML/JS shell (identical for every user) served from S3 via CDN
+- [ ] **UI-02**: Queue page starts in polling mode (every 5s) and upgrades to SSE when rank < SSE_THRESHOLD without page reload
+- [ ] **UI-03**: Queue page displays position ("X people ahead") and estimated wait time (~rank/admitRatePerMin minutes)
+- [ ] **UI-04**: Queue page shows "waiting for capacity" state when server returns `constrained: true` (ceiling-blocked queue does not show a decrementing countdown)
+- [ ] **UI-05**: On admission event, queue page sets q_admission cookie, reads target URL from sessionStorage, redirects to protected origin
+- [ ] **UI-06**: Admin dashboard shows live queue depth, active users, admit rate, capacity, and capacity headroom
+- [ ] **UI-07**: Admin dashboard allows live adjustment of admit rate and capacity ceiling via PUT /queue/rate/:eventId
+- [ ] **UI-08**: Stub ticket checkout validates q_session cookie and displays simulated seat selection page
+
+### Infrastructure
+
+- [ ] **INFRA-01**: Docker Compose runs full local stack: Redis, queue API, stub ticket checkout, queue waiting page, admin dashboard
+- [ ] **INFRA-02**: ECS Fargate task definition for queue service (512MB / 0.5 vCPU, auto-scale on active_sse_connections + CPU)
+- [ ] **INFRA-03**: ElastiCache Redis cluster configuration (cache.r7g.large, 2 shards, AOF persistence enabled)
+- [ ] **INFRA-04**: S3 bucket + CloudFront distribution configuration for static queue waiting page
+- [ ] **INFRA-05**: DynamoDB tables: queue-events (event config), queue-sessions (audit per ticket), queue-audit-log (immutable event log)
+- [ ] **INFRA-06**: SQS FIFO queue for admission audit events with MessageGroupId = eventId
+
+## v2 Requirements
+
+### Edge (Real Akamai)
+
+- **EDGE-01**: Deploy EdgeWorker to real Akamai property on app.yourdomain.com
+- **EDGE-02**: Configure two independent Akamai Property Manager variables (ADMISSION_SECRET, SESSION_SECRET)
+- **EDGE-03**: Validate EdgeWorker token verification matches local middleware behavior end-to-end
+
+### Resilience & Operations
+
+- **OPS-01**: Load test: 10k concurrent queued users, steady-state admission at configured rate
+- **OPS-02**: CloudWatch alarms: queue_depth, active_users, capacity_headroom, setnx_failures → SNS
+- **OPS-03**: TTL-sweep background job: decrement active:{eventId} on token:{jti} keyspace expiry notification (abandoned sessions)
+
+### Bot Resistance
+
+- **BOT-01**: CAPTCHA on /queue/join (hCaptcha or equivalent)
+- **BOT-02**: Akamai WAF upstream of queue protection
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Real payment processing | Stub origin is sufficient for demonstrating queue mechanics |
+| Lottery / pre-sale ballot | Separate problem — not FIFO, requires ballot service |
+| CAPTCHA / bot resistance | Deferred to v2; not core to queue mechanics learning goal |
+| 500k+ load testing | Design validated on paper; functional correctness is v1 target |
+| Multi-tenant / SaaS mode | Single-operator use case for learning; generalization deferred |
+
+## Traceability
+
+Updated during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| QUEUE-01 | — | Pending |
+| QUEUE-02 | — | Pending |
+| QUEUE-03 | — | Pending |
+| QUEUE-04 | — | Pending |
+| QUEUE-05 | — | Pending |
+| QUEUE-06 | — | Pending |
+| QUEUE-07 | — | Pending |
+| QUEUE-08 | — | Pending |
+| QUEUE-09 | — | Pending |
+| TOKEN-01 | — | Pending |
+| TOKEN-02 | — | Pending |
+| TOKEN-03 | — | Pending |
+| TOKEN-04 | — | Pending |
+| TOKEN-05 | — | Pending |
+| TOKEN-06 | — | Pending |
+| TOKEN-07 | — | Pending |
+| UI-01 | — | Pending |
+| UI-02 | — | Pending |
+| UI-03 | — | Pending |
+| UI-04 | — | Pending |
+| UI-05 | — | Pending |
+| UI-06 | — | Pending |
+| UI-07 | — | Pending |
+| UI-08 | — | Pending |
+| INFRA-01 | — | Pending |
+| INFRA-02 | — | Pending |
+| INFRA-03 | — | Pending |
+| INFRA-04 | — | Pending |
+| INFRA-05 | — | Pending |
+| INFRA-06 | — | Pending |
+
+**Coverage:**
+- v1 requirements: 30 total
+- Mapped to phases: 0 (pending roadmap)
+- Unmapped: 30 ⚠️
+
+---
+*Requirements defined: 2026-08-02*
+*Last updated: 2026-08-02 after initial definition*
