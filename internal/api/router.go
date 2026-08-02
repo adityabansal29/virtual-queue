@@ -26,11 +26,12 @@ func NewRouter(h *Handler) *gin.Engine {
 		}
 	})
 
+	r.POST("/queue/exit", h.QueueExit)
+
 	// Placeholder endpoints — implemented in later plans.
 	stub := func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "not implemented"})
 	}
-	r.POST("/queue/exit", stub)
 	r.PUT("/queue/rate/:eventId", stub)
 	r.GET("/queue/config/:eventId", stub)
 
