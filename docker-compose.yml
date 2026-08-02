@@ -1,0 +1,48 @@
+services:
+  redis-queue:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis-origin:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  queueserver:
+    build:
+      context: .
+      dockerfile: Dockerfile.queueserver
+    ports:
+      - "127.0.0.1:8080:8080"
+    env_file: .env
+    environment:
+      REDIS_ADDR: redis-queue:6379
+    depends_on:
+      redis-queue:
+        condition: service_healthy
+
+  stuborigin:
+    build:
+      context: .
+      dockerfile: Dockerfile.stuborigin
+    ports:
+      - "127.0.0.1:8081:8081"
+    env_file: .env
+    environment:
+      REDIS_ADDR: redis-origin:6379
+    depends_on:
+      redis-origin:
+        condition: service_healthy
+    profiles:
+      - stub
