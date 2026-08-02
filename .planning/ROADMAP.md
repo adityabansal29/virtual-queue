@@ -29,7 +29,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. `curl GET /queue/status/:id?mode=sse` opens an SSE stream that delivers a position event and later an admitted event when the scheduler pops that ticket
   4. Sending a valid q_admission JWT to the QueueGuard middleware succeeds once (SETNX succeeds, q_session issued) and returns 403 on the identical second request
   5. `docker compose up` starts without missing env vars; ADMISSION_SECRET and SESSION_SECRET are two distinct values and the system rejects tokens signed with the wrong secret
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Walking skeleton: module scaffold, Docker Compose, POST /queue/join end-to-end tracer
+- [ ] 01-02-PLAN.md — Queue mechanics: poll handler, SSE handler, admission scheduler, leader lock, queue exit
+- [ ] 01-03-PLAN.md — Token model: JWT issue/verify, QueueGuard middleware, stub origin, unit tests
+- [ ] 01-04-PLAN.md — Admin endpoints, verification script (scripts/verify.sh)
 
 ### Phase 2: Frontend & Admin UI
 **Goal**: A browser-accessible waiting room experience — the static queue page polls, upgrades to SSE near the front, redirects on admission, and the admin dashboard lets an operator adjust rate and capacity live.
