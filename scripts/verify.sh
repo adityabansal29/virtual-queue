@@ -122,7 +122,7 @@ else
   JWT=""
   for i in $(seq 1 8); do
     POLL4=$(curl -sf "${QSERVER}/queue/status/${TICKET4}?mode=poll" 2>/dev/null || echo "")
-    JWT=$(echo "$POLL4" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+    JWT=$(echo "$POLL4" | grep -o '"token":"[^"]*"' | cut -d'"' -f4 || true)
     [ -n "$JWT" ] && break
     sleep 1
   done
@@ -139,8 +139,8 @@ else
       fail "Criterion 4a: first admission returned HTTP ${HTTP1} (expected 200)"
     fi
 
-    # Second use (replay) — must be rejected (403)
-    HTTP2=$(curl -sf -o /dev/null -w "%{http_code}" \
+    # Second use (replay) — must be rejected (403); use -s not -sf so 403 doesn't cause exit
+    HTTP2=$(curl -s -o /dev/null -w "%{http_code}" \
       -b "q_admission=${JWT}" "${ORIGIN}/" 2>/dev/null || echo "000")
     if [ "$HTTP2" = "403" ]; then
       pass "Criterion 4b: token replay returned HTTP 403"
