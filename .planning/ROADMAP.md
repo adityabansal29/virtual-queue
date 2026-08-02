@@ -13,7 +13,7 @@ Three phases deliver a complete, curl-testable queue API (with token model and l
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Queue Core & Local Stack** - Go queue API, Redis sorted-set queue, admission scheduler, two-cookie token model, and Docker Compose local dev environment
+- [x] **Phase 1: Queue Core & Local Stack** - Go queue API, Redis sorted-set queue, admission scheduler, two-cookie token model, and Docker Compose local dev environment (completed 2026-08-02)
 - [ ] **Phase 2: Frontend & Admin UI** - Static queue waiting page with hybrid poll/SSE crossover, admin dashboard, and stub ticket checkout
 - [ ] **Phase 3: AWS Infrastructure** - ECS Fargate, ElastiCache Redis, S3/CloudFront, DynamoDB, and SQS FIFO deployment
 
@@ -82,6 +82,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Queue Core & Local Stack | 4/4 | In Progress|  |
+| 1. Queue Core & Local Stack | 4/4 | Complete    | 2026-08-02 |
 | 2. Frontend & Admin UI | 0/TBD | Not started | - |
 | 3. AWS Infrastructure | 0/TBD | Not started | - |

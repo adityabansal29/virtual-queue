@@ -7,25 +7,25 @@
 
 ### Queue Core
 
-- [ ] **QUEUE-01**: User can join the queue and receive a unique ticketId (POST /queue/join → ZADD with join-timestamp score)
-- [ ] **QUEUE-02**: User can poll their queue position (GET /queue/status/:id?mode=poll — stateless ZRANK read, connection closes immediately)
-- [ ] **QUEUE-03**: Poll response includes `upgrade_to_sse: true` hint when rank < SSE_THRESHOLD (default 200)
-- [ ] **QUEUE-04**: User can connect via SSE to receive real-time position updates when near the front (GET /queue/status/:id?mode=sse)
-- [ ] **QUEUE-05**: SSE handler subscribes to `queue:tick:{eventId}` and `ticket:updates:{ticketId}` pub/sub channels before reading initial rank (avoids race)
-- [ ] **QUEUE-06**: Admission scheduler ticks every second and admits min(rate, headroom) users via atomic ZPOPMIN
-- [ ] **QUEUE-07**: Scheduler holds a distributed leader lock (Redis SETNX NX+TTL) so only one instance admits per tick
-- [ ] **QUEUE-08**: Admitted token is written to `ticket:{ticketId}` hash field `admission_token` for poll-tier pickup (in addition to pub/sub publish)
-- [ ] **QUEUE-09**: User can call POST /queue/exit to proactively decrement `active:{eventId}` and free their slot
+- [x] **QUEUE-01**: User can join the queue and receive a unique ticketId (POST /queue/join → ZADD with join-timestamp score)
+- [x] **QUEUE-02**: User can poll their queue position (GET /queue/status/:id?mode=poll — stateless ZRANK read, connection closes immediately)
+- [x] **QUEUE-03**: Poll response includes `upgrade_to_sse: true` hint when rank < SSE_THRESHOLD (default 200)
+- [x] **QUEUE-04**: User can connect via SSE to receive real-time position updates when near the front (GET /queue/status/:id?mode=sse)
+- [x] **QUEUE-05**: SSE handler subscribes to `queue:tick:{eventId}` and `ticket:updates:{ticketId}` pub/sub channels before reading initial rank (avoids race)
+- [x] **QUEUE-06**: Admission scheduler ticks every second and admits min(rate, headroom) users via atomic ZPOPMIN
+- [x] **QUEUE-07**: Scheduler holds a distributed leader lock (Redis SETNX NX+TTL) so only one instance admits per tick
+- [x] **QUEUE-08**: Admitted token is written to `ticket:{ticketId}` hash field `admission_token` for poll-tier pickup (in addition to pub/sub publish)
+- [x] **QUEUE-09**: User can call POST /queue/exit to proactively decrement `active:{eventId}` and free their slot
 
 ### Token & Security
 
-- [ ] **TOKEN-01**: Scheduler issues HMAC-signed JWT (q_admission) with claims: JTI, eventId, ticketId, iat, exp (30min), signed with ADMISSION_SECRET
-- [ ] **TOKEN-02**: ADMISSION_SECRET and SESSION_SECRET are two independent keys — compromise of one does not expose the other
-- [ ] **TOKEN-03**: Go middleware (EdgeWorker-equivalent) verifies q_session with SESSION_SECRET or q_admission with ADMISSION_SECRET inline (no Redis call), redirects if missing/invalid/expired
-- [ ] **TOKEN-04**: Origin QueueGuard performs SETNX on `token:{jti}` (TTL 30min) after valid JWT check — SETNX fail → 403 (token already used)
-- [ ] **TOKEN-05**: QueueGuard increments `active:{eventId}` after successful SETNX and issues q_session cookie signed with SESSION_SECRET
-- [ ] **TOKEN-06**: QueueGuard clears q_admission cookie and passes request to business handler on success
-- [ ] **TOKEN-07**: `active:{eventId}` counter tracks live concurrency; scheduler reads it every tick and computes headroom = capacity - active; zero headroom → skip tick
+- [x] **TOKEN-01**: Scheduler issues HMAC-signed JWT (q_admission) with claims: JTI, eventId, ticketId, iat, exp (30min), signed with ADMISSION_SECRET
+- [x] **TOKEN-02**: ADMISSION_SECRET and SESSION_SECRET are two independent keys — compromise of one does not expose the other
+- [x] **TOKEN-03**: Go middleware (EdgeWorker-equivalent) verifies q_session with SESSION_SECRET or q_admission with ADMISSION_SECRET inline (no Redis call), redirects if missing/invalid/expired
+- [x] **TOKEN-04**: Origin QueueGuard performs SETNX on `token:{jti}` (TTL 30min) after valid JWT check — SETNX fail → 403 (token already used)
+- [x] **TOKEN-05**: QueueGuard increments `active:{eventId}` after successful SETNX and issues q_session cookie signed with SESSION_SECRET
+- [x] **TOKEN-06**: QueueGuard clears q_admission cookie and passes request to business handler on success
+- [x] **TOKEN-07**: `active:{eventId}` counter tracks live concurrency; scheduler reads it every tick and computes headroom = capacity - active; zero headroom → skip tick
 
 ### Frontend
 
@@ -40,7 +40,7 @@
 
 ### Infrastructure
 
-- [ ] **INFRA-01**: Docker Compose runs full local stack: Redis, queue API, stub ticket checkout, queue waiting page, admin dashboard
+- [x] **INFRA-01**: Docker Compose runs full local stack: Redis, queue API, stub ticket checkout, queue waiting page, admin dashboard
 - [ ] **INFRA-02**: ECS Fargate task definition for queue service (512MB / 0.5 vCPU, auto-scale on active_sse_connections + CPU)
 - [ ] **INFRA-03**: ElastiCache Redis cluster configuration (cache.r7g.large, 2 shards, AOF persistence enabled)
 - [ ] **INFRA-04**: S3 bucket + CloudFront distribution configuration for static queue waiting page
@@ -80,22 +80,22 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| QUEUE-01 | Phase 1 | Pending |
-| QUEUE-02 | Phase 1 | Pending |
-| QUEUE-03 | Phase 1 | Pending |
-| QUEUE-04 | Phase 1 | Pending |
-| QUEUE-05 | Phase 1 | Pending |
-| QUEUE-06 | Phase 1 | Pending |
-| QUEUE-07 | Phase 1 | Pending |
-| QUEUE-08 | Phase 1 | Pending |
-| QUEUE-09 | Phase 1 | Pending |
-| TOKEN-01 | Phase 1 | Pending |
-| TOKEN-02 | Phase 1 | Pending |
-| TOKEN-03 | Phase 1 | Pending |
-| TOKEN-04 | Phase 1 | Pending |
-| TOKEN-05 | Phase 1 | Pending |
-| TOKEN-06 | Phase 1 | Pending |
-| TOKEN-07 | Phase 1 | Pending |
+| QUEUE-01 | Phase 1 | Complete |
+| QUEUE-02 | Phase 1 | Complete |
+| QUEUE-03 | Phase 1 | Complete |
+| QUEUE-04 | Phase 1 | Complete |
+| QUEUE-05 | Phase 1 | Complete |
+| QUEUE-06 | Phase 1 | Complete |
+| QUEUE-07 | Phase 1 | Complete |
+| QUEUE-08 | Phase 1 | Complete |
+| QUEUE-09 | Phase 1 | Complete |
+| TOKEN-01 | Phase 1 | Complete |
+| TOKEN-02 | Phase 1 | Complete |
+| TOKEN-03 | Phase 1 | Complete |
+| TOKEN-04 | Phase 1 | Complete |
+| TOKEN-05 | Phase 1 | Complete |
+| TOKEN-06 | Phase 1 | Complete |
+| TOKEN-07 | Phase 1 | Complete |
 | UI-01 | Phase 2 | Pending |
 | UI-02 | Phase 2 | Pending |
 | UI-03 | Phase 2 | Pending |
@@ -104,7 +104,7 @@
 | UI-06 | Phase 2 | Pending |
 | UI-07 | Phase 2 | Pending |
 | UI-08 | Phase 2 | Pending |
-| INFRA-01 | Phase 1 | Pending |
+| INFRA-01 | Phase 1 | Complete |
 | INFRA-02 | Phase 3 | Pending |
 | INFRA-03 | Phase 3 | Pending |
 | INFRA-04 | Phase 3 | Pending |
@@ -112,6 +112,7 @@
 | INFRA-06 | Phase 3 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 30 total
 - Mapped to phases: 30 ✓
 - Unmapped: 0
