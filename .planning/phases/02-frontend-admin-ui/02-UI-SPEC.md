@@ -67,6 +67,7 @@ Source: defaults — no upstream artifact specified sizes. Chosen to be legible 
 | Secondary (30%) | #f3f4f6 | Nav bar, sidebar area, table row alternation, input fills |
 | Accent (10%) | #2563eb | Submit button, active event highlight in dropdown, SSE connected indicator dot |
 | Destructive | #dc2626 | Session-expired error banner, "Your session has expired" error state only |
+| Warning surface | #fef3c7 | Constrained banner background (queue page) |
 
 Accent reserved for: primary Submit/Update button, active-event selector highlight, SSE live-connection status indicator dot. Not used on stat labels, table headers, or general text.
 
@@ -184,19 +185,22 @@ Destructive actions in this phase: none. The "Complete Purchase" flow is termina
 
 ## UI Considerations
 
-Applicable state considerations resolved: 7 covered, 1 backstop, 1 unresolved
+Applicable state considerations resolved: 7 covered, 2 backstop (probe-verified 2026-08-02)
 
 | Category | Element(s) | Status | Resolution / Reason |
 |----------|------------|--------|---------------------|
-| empty | Admin event selector when `GET /queue/events` returns `[]` | ✅ covered | "No events active" option rendered in `<select>`; stat cards show `—` |
-| loading | Queue page before first poll response | ✅ covered | `id="pos"` renders "Checking your position…" on page load |
-| error | Queue page SSE `onerror` | ✅ covered | `id="status"` shows "Reconnecting…"; polling does not restart (SSE handles its own reconnect) |
-| error | Queue page poll `fetch` failure | ✅ covered | `id="status"` shows "Connection lost. Retrying…"; interval continues |
-| error | Admin dashboard poll failure | ✅ covered | Stat values retain last value with "(stale)" suffix |
-| error | Stub checkout missing/expired session | ✅ covered | Go handler renders separate error page with session-expired copy and return link |
-| constrained | Queue page `constrained: true` response | ✅ covered | Constrained banner shown; wait estimate element hidden |
-| overflow | Position display for rank > 99,999 | 🧪 backstop | Display must not overflow container; visual test required at rank=500000 |
-| zero-one-many | Admin stat cards when values are 0 | ⚠ unresolved | Planner assumption: 0 is a valid value and should display as "0", not "—" or empty. Confirm in implementation. |
+| loading | Queue page — initial state | ✅ covered | `id="pos"` renders "Checking your position…" before first poll response |
+| error | Queue page — SSE `onerror` | ✅ covered | `id="status"` shows "Reconnecting…"; EventSource handles its own reconnect |
+| error | Queue page — poll `fetch` failure | ✅ covered | `id="status"` shows "Connection lost. Retrying…"; poll interval continues |
+| empty | Admin dashboard — no events | ✅ covered | Event selector shows "No events active"; stat cards display `—` when no event selected |
+| error | Admin dashboard — poll failure | ✅ covered | Stat cards retain last value with "(stale)" suffix |
+| error | Admin dashboard — PUT `/queue/rate` failure | ✅ covered | "Update failed. Try again." shown below Update Config button |
+| zero-one-many | Admin dashboard — zero stat values | ✅ covered | `0` displayed as `"0"`, not empty or `—`; zero is a valid operational value |
+| overflow | Admin dashboard — large numeric stat values | 🧪 backstop | { "statement": "Stat card values at extreme scale (e.g., queue depth = 500,000) must not overflow the card boundary or wrap unexpectedly", "verification": "backstop" } |
+| error | Stub checkout — invalid/missing `q_session` | ✅ covered | Go handler renders dedicated error page: "Your session has expired." with "Return to queue" link |
+| error | Stub checkout — `POST /queue/exit` failure | ✅ covered | Button re-enables; inline message: "Could not free slot. Please close this tab." |
+| populated | Stub checkout — valid session | ✅ covered | Event ID, ticket ID, 3×4 seat grid, Complete Purchase button rendered from JWT claims |
+| overflow | Stub checkout — long identifiers | 🧪 backstop | { "statement": "eventId and ticketId strings with > 20 characters must not overflow their containers or break the checkout layout", "verification": "backstop" } |
 
 ---
 
@@ -243,11 +247,11 @@ No third-party registries. No shadcn registry safety gate required.
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: FLAG resolved — #fef3c7 added as Warning surface token
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** VERIFIED 2026-08-02
