@@ -24,3 +24,23 @@ func NewQueueRedis(addr string) *redis.Client {
 
 	return client
 }
+
+// getPositionScript atomically returns the 0-based rank of ticketID in queueKey.
+// Returns -1 if the ticket is not present (already admitted or expired).
+const getPositionScript = `
+local rank = redis.call('ZRANK', KEYS[1], ARGV[1])
+if rank == false then return -1 end
+return rank
+`
+
+// GetPosition returns the 0-based rank of ticketID in queueKey via a Lua script.
+// Returns -1 if the ticket is not in the sorted set (admitted or expired).
+func GetPosition(ctx context.Context, rdb *redis.Client, queueKey, ticketID string) (int64, error) {
+	return rdb.Eval(ctx, getPositionScript, []string{queueKey}, ticketID).Int64()
+}
+
+// EventIDFromTicket returns the eventId stored in ticket:{ticketID} hash.
+// Returns redis.Nil error if the ticket does not exist — caller should return 404.
+func EventIDFromTicket(ctx context.Context, rdb *redis.Client, ticketID string) (string, error) {
+	return rdb.HGet(ctx, "ticket:"+ticketID, "eventId").Result()
+}
