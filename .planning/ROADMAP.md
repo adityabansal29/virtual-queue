@@ -56,17 +56,17 @@ Plans:
   4. The stub checkout page validates the q_session cookie and displays the simulated seat selection; a missing or expired cookie shows an error
   5. The admin dashboard displays live queue depth, active users, admit rate, capacity, and headroom; changing admit rate or capacity via the dashboard takes effect on the next scheduler tick
 
-**Plans**: 3 plans
+**Plans**: 3/3 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 02-01-PLAN.md — [Wave 1, tracer] Queue waiting page end-to-end: nginx service, CORS, queue.js poll/SSE/admission
+- [x] 02-01-PLAN.md — [Wave 1, tracer] Queue waiting page end-to-end: nginx service, CORS, queue.js poll/SSE/admission
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 02-02-PLAN.md — [Wave 2, parallel] Admin dashboard: GET /queue/events, event selector, live stats, rate/capacity update
-- [ ] 02-03-PLAN.md — [Wave 2, parallel] Stub checkout + capacity enforcement: constrained flag, session validation, seat grid
+- [x] 02-02-PLAN.md — [Wave 2, parallel] Admin dashboard: GET /queue/events, event selector, live stats, rate/capacity update
+- [x] 02-03-PLAN.md — [Wave 2, parallel] Stub checkout + capacity enforcement: constrained flag, session validation, seat grid
 
 **UI hint**: yes
 
@@ -94,5 +94,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Queue Core & Local Stack | 4/4 | Complete    | 2026-08-02 |
-| 2. Frontend & Admin UI | 0/TBD | Not started | - |
+| 2. Frontend & Admin UI | 3/3 | In Progress|  |
 | 3. AWS Infrastructure | 0/TBD | Not started | - |
