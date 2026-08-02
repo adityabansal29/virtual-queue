@@ -33,14 +33,14 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Sending a valid q_admission JWT to the QueueGuard middleware succeeds once (SETNX succeeds, q_session issued) and returns 403 on the identical second request
   5. `docker compose up` starts without missing env vars; ADMISSION_SECRET and SESSION_SECRET are two distinct values and the system rejects tokens signed with the wrong secret
 
-**Plans**: 3/4 plans executed
+**Plans**: 4/4 plans executed
 
 Plans:
 
 - [x] 01-01-PLAN.md — [Wave 1] Walking skeleton: module scaffold, Docker Compose, POST /queue/join end-to-end tracer
 - [x] 01-02-PLAN.md — [Wave 2, parallel with 01-03] Queue mechanics: poll handler, SSE handler, admission scheduler, leader lock, queue exit
 - [x] 01-03-PLAN.md — [Wave 2, parallel with 01-02] Token model: JWT issue/verify, QueueGuard middleware, stub origin, unit tests
-- [ ] 01-04-PLAN.md — [Wave 3, after 01-02 + 01-03] Admin endpoints, verification script (scripts/verify.sh)
+- [x] 01-04-PLAN.md — [Wave 3, after 01-02 + 01-03] Admin endpoints, verification script (scripts/verify.sh)
 
 ### Phase 2: Frontend & Admin UI
 
@@ -82,6 +82,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Queue Core & Local Stack | 3/4 | In Progress|  |
+| 1. Queue Core & Local Stack | 4/4 | In Progress|  |
 | 2. Frontend & Admin UI | 0/TBD | Not started | - |
 | 3. AWS Infrastructure | 0/TBD | Not started | - |
