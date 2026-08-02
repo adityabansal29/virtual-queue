@@ -44,5 +44,3 @@ services:
     depends_on:
       redis-origin:
         condition: service_healthy
-    profiles:
-      - stub
