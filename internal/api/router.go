@@ -49,6 +49,7 @@ func NewRouter(h *Handler) *gin.Engine {
 
 	r.PUT("/queue/rate/:eventId", h.UpdateRate)
 	r.GET("/queue/config/:eventId", h.GetConfig)
+	r.GET("/queue/events", h.GetEvents)
 
 	return r
 }
