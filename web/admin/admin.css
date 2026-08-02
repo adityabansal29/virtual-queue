@@ -1,0 +1,118 @@
+/* admin.css — queue admin dashboard styles */
+* { box-sizing: border-box; }
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  background: #ffffff;
+  margin: 0;
+}
+
+.top-bar {
+  background: #f3f4f6;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.content {
+  padding: 24px;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.1;
+  display: block;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+.stat-value.accent {
+  color: #2563eb;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #6b7280;
+  display: block;
+  margin-top: 4px;
+}
+
+.edit-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+#update-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+input[type="number"] {
+  padding: 6px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 16px;
+  width: 80px;
+}
+
+#update-btn {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+#update-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#poll-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #6b7280;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+#poll-indicator.active {
+  background: #2563eb;
+}
+
+#update-error {
+  color: #dc2626;
+  font-size: 14px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

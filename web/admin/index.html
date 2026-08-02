@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Queue Admin</title>
+  <!-- D-02: config injected first so admin.js reads it on load -->
+  <script>window.QUEUE_CONFIG = { apiBase: 'http://localhost:8080' };</script>
+  <link rel="stylesheet" href="admin.css">
+  <script src="admin.js" defer></script>
+</head>
+<body>
+  <div class="top-bar">
+    <select id="event-select">
+      <option value="">No events active</option>
+    </select>
+    <span id="poll-indicator"></span>
+  </div>
+  <div class="content">
+    <div class="stat-grid">
+      <div class="stat-card">
+        <span class="stat-value" id="stat-depth">&mdash;</span>
+        <span class="stat-label">Queue Depth</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="stat-active">&mdash;</span>
+        <span class="stat-label">Active Users</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="stat-rate">&mdash;</span>
+        <span class="stat-label">Admit Rate</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="stat-capacity">&mdash;</span>
+        <span class="stat-label">Capacity</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="stat-headroom">&mdash;</span>
+        <span class="stat-label">Headroom</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="stat-drain">&mdash;</span>
+        <span class="stat-label">Est. Drain</span>
+      </div>
+    </div>
+    <div class="edit-controls">
+      <form id="update-form">
+        <label>Rate <input type="number" id="rate-input" min="1"></label>
+        <label>Capacity <input type="number" id="capacity-input" min="1"></label>
+        <button type="submit" id="update-btn" disabled>Update Config</button>
+        <div id="update-error"></div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
