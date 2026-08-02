@@ -59,7 +59,12 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 02-01-PLAN.md — [Wave 1, tracer] Queue waiting page end-to-end: nginx service, CORS, queue.js poll/SSE/admission
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 02-02-PLAN.md — [Wave 2, parallel] Admin dashboard: GET /queue/events, event selector, live stats, rate/capacity update
 - [ ] 02-03-PLAN.md — [Wave 2, parallel] Stub checkout + capacity enforcement: constrained flag, session validation, seat grid
 
