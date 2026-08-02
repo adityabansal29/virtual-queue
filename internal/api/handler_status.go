@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -39,10 +40,19 @@ func (h *Handler) QueueStatusPoll(c *gin.Context) {
 		return
 	}
 
+	// UI-04: emit constrained flag when capacity is configured and headroom is exhausted.
+	// constrained is ONLY emitted on position responses (not admitted/pending).
+	capacityStr, _ := h.rdb.Get(ctx, "capacity:"+eventID).Result()
+	capacity, _ := strconv.ParseInt(capacityStr, 10, 64)
+	activeStr, _ := h.rdb.Get(ctx, "active:"+eventID).Result()
+	active, _ := strconv.ParseInt(activeStr, 10, 64)
+	constrained := capacity > 0 && (capacity-active) <= 0
+
 	c.JSON(http.StatusOK, gin.H{
-		"type":          "position",
-		"value":         rank,
+		"type":           "position",
+		"value":          rank,
 		"upgrade_to_sse": rank < int64(h.cfg.SSEThreshold),
+		"constrained":    constrained,
 	})
 }
 

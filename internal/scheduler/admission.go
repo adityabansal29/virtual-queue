@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -63,9 +64,22 @@ func (s *Scheduler) tick(ctx context.Context, eventID string) {
 		return // D-06: rate == 0 means skip ZPOPMIN entirely
 	}
 
-	// ponytail: D-06 — active count ceiling deferred to Phase 2;
-	// add min(rate, headroom) here when capacity enforcement is wired.
-	n := rate
+	// D-06 (Phase 2): admit min(rate, headroom); headroom = capacity - active. capacity=0 means unlimited.
+	activeStr, _ := s.rdb.Get(ctx, "active:"+eventID).Result()
+	active, _ := strconv.ParseInt(activeStr, 10, 64)
+	capacityStr, _ := s.rdb.Get(ctx, "capacity:"+eventID).Result()
+	capacity, _ := strconv.ParseInt(capacityStr, 10, 64)
+
+	var n int64
+	if capacity > 0 {
+		headroom := capacity - active
+		if headroom <= 0 {
+			return // T-02-12: zero headroom — skip ZPOPMIN entirely
+		}
+		n = min(rate, headroom)
+	} else {
+		n = rate // capacity=0 means unconfigured/unlimited
+	}
 
 	s.admitBatch(ctx, eventID, n)
 }
