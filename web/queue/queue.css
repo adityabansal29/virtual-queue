@@ -1,0 +1,48 @@
+/* queue.css — queue waiting page styles per UI-SPEC design tokens */
+
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    background: #ffffff;
+    margin: 0;
+}
+
+main {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 64px 16px 16px; /* 3xl top per UI-SPEC */
+}
+
+#pos {
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.1;
+    margin: 0 0 8px; /* sm gap */
+    overflow-wrap: break-word; /* backstop: 500k+ values must not overflow */
+}
+
+#wait {
+    font-size: 16px;
+    font-weight: 400;
+    color: #6b7280;
+    margin: 0 0 16px; /* md gap */
+}
+
+#status {
+    font-size: 16px;
+    color: #6b7280;
+    margin: 0 0 16px;
+}
+
+#constrained {
+    display: none;
+    background: #fef3c7;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 16px;
+    margin-top: 16px;
+}
+
+#constrained.visible {
+    display: block;
+}

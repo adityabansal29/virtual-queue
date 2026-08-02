@@ -44,3 +44,11 @@ services:
     depends_on:
       redis-origin:
         condition: service_healthy
+
+  static-pages:
+    image: nginx:alpine
+    ports:
+      - "127.0.0.1:8082:80"
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
