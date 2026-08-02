@@ -32,10 +32,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 4 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Walking skeleton: module scaffold, Docker Compose, POST /queue/join end-to-end tracer
-- [ ] 01-02-PLAN.md — Queue mechanics: poll handler, SSE handler, admission scheduler, leader lock, queue exit
-- [ ] 01-03-PLAN.md — Token model: JWT issue/verify, QueueGuard middleware, stub origin, unit tests
-- [ ] 01-04-PLAN.md — Admin endpoints, verification script (scripts/verify.sh)
+- [ ] 01-01-PLAN.md — [Wave 1] Walking skeleton: module scaffold, Docker Compose, POST /queue/join end-to-end tracer
+- [ ] 01-02-PLAN.md — [Wave 2, parallel with 01-03] Queue mechanics: poll handler, SSE handler, admission scheduler, leader lock, queue exit
+- [ ] 01-03-PLAN.md — [Wave 2, parallel with 01-02] Token model: JWT issue/verify, QueueGuard middleware, stub origin, unit tests
+- [ ] 01-04-PLAN.md — [Wave 3, after 01-02 + 01-03] Admin endpoints, verification script (scripts/verify.sh)
 
 ### Phase 2: Frontend & Admin UI
 **Goal**: A browser-accessible waiting room experience — the static queue page polls, upgrades to SSE near the front, redirects on admission, and the admin dashboard lets an operator adjust rate and capacity live.
