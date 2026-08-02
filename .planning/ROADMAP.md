@@ -56,7 +56,13 @@ Plans:
   4. The stub checkout page validates the q_session cookie and displays the simulated seat selection; a missing or expired cookie shows an error
   5. The admin dashboard displays live queue depth, active users, admit rate, capacity, and headroom; changing admit rate or capacity via the dashboard takes effect on the next scheduler tick
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — [Wave 1, tracer] Queue waiting page end-to-end: nginx service, CORS, queue.js poll/SSE/admission
+- [ ] 02-02-PLAN.md — [Wave 2, parallel] Admin dashboard: GET /queue/events, event selector, live stats, rate/capacity update
+- [ ] 02-03-PLAN.md — [Wave 2, parallel] Stub checkout + capacity enforcement: constrained flag, session validation, seat grid
+
 **UI hint**: yes
 
 ### Phase 3: AWS Infrastructure
