@@ -7,13 +7,14 @@ import (
 
 // Config holds all runtime configuration for the queue server.
 type Config struct {
-	RedisAddr      string
-	Port           string
-	AdmissionSecret string
-	SessionSecret   string
-	SSEThreshold     int
-	DefaultAdmitRate int64
-	QueuePageURL     string // where browser lands after joining: ?ticket=...&target=...
+	RedisAddr         string
+	Port              string
+	AdmissionSecret   string
+	SessionSecret     string
+	SSEThreshold      int
+	DefaultAdmitRate  int64
+	QueuePageURL      string // where browser lands after joining: ?ticket=...&target=...
+	SchedulerTickSecs int    // scheduler tick interval in seconds
 }
 
 // Load reads configuration from environment variables.
@@ -26,8 +27,9 @@ func Load() Config {
 		AdmissionSecret:  os.Getenv("ADMISSION_SECRET"),
 		SessionSecret:    os.Getenv("SESSION_SECRET"),
 		SSEThreshold:     getEnvInt("SSE_THRESHOLD", 200),
-		DefaultAdmitRate: getEnvInt64("DEFAULT_ADMIT_RATE", 60),
-		QueuePageURL:     getEnvOrDefault("QUEUE_PAGE_URL", "http://localhost:8082/queue/"),
+		DefaultAdmitRate:  getEnvInt64("DEFAULT_ADMIT_RATE", 60),
+		QueuePageURL:      getEnvOrDefault("QUEUE_PAGE_URL", "http://localhost:8082/queue/"),
+		SchedulerTickSecs: getEnvInt("SCHEDULER_TICK_SECS", 1),
 	}
 
 	// T-01-03 + TOKEN-02: secrets must be non-empty and distinct.

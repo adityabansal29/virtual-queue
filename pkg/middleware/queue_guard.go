@@ -18,6 +18,7 @@ type Config struct {
 	SessionSecret   string
 	QueueJoinURL    string // GET /queue/join endpoint — linked from the error page
 	EventID         string // event this origin belongs to
+	Secure          bool   // true in production (HTTPS), false for local HTTP dev
 	RDB             *redis.Client
 }
 
@@ -31,7 +32,8 @@ func QueueGuard(cfg Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 1. Session fast-path.
 		if sc, err := c.Cookie("q_session"); err == nil {
-			if _, err := token.ValidateSession(sc, cfg.SessionSecret); err == nil {
+			if claims, err := token.ValidateSession(sc, cfg.SessionSecret); err == nil {
+				c.Set("session", claims)
 				c.Next()
 				return
 			}
@@ -60,10 +62,14 @@ func QueueGuard(cfg Config) gin.HandlerFunc {
 			return
 		}
 
-		// 5. Issue q_session, clear q_admission.
+		// 5. Issue q_session, clear q_admission, store claims for this request.
 		sc, _ := token.IssueSession(claims.Subject, claims.EventID, cfg.SessionSecret)
-		c.SetCookie("q_session", sc, 1800, "/", "", true, true)
-		c.SetCookie("q_admission", "", -1, "/", "", true, true)
+		c.SetCookie("q_session", sc, 1800, "/", "", cfg.Secure, true)
+		c.SetCookie("q_admission", "", -1, "/", "", cfg.Secure, true)
+		// Cookie is set on the response; handler reads from gin context on this request.
+		if sessionClaims, err := token.ValidateSession(sc, cfg.SessionSecret); err == nil {
+			c.Set("session", sessionClaims)
+		}
 
 		c.Next()
 	}

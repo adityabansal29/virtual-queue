@@ -35,6 +35,7 @@ func main() {
 		SessionSecret:   cfg.SessionSecret,
 		QueueJoinURL:    "http://localhost:8080/queue/join",
 		EventID:         eventID,
+		Secure:          false, // HTTP in local dev; set true behind HTTPS in production
 		RDB:             originRedis,
 	}
 
@@ -42,10 +43,9 @@ func main() {
 	r.Use(gin.Logger(), gin.Recovery())
 
 	r.GET("/", middleware.QueueGuard(mwCfg), func(c *gin.Context) {
-		// QueueGuard guarantees a valid q_session at this point.
-		cookie, _ := c.Cookie("q_session")
-		claims, err := token.ValidateSession(cookie, cfg.SessionSecret)
-		if err != nil {
+		val, _ := c.Get("session")
+		claims, ok := val.(*token.SessionClaims)
+		if !ok || claims == nil {
 			c.Status(http.StatusInternalServerError)
 			return
 		}

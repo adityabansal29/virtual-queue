@@ -27,10 +27,10 @@ func NewScheduler(rdb *redis.Client, cfg config.Config, issueToken func(string, 
 	return &Scheduler{rdb: rdb, cfg: cfg, issueToken: issueToken}
 }
 
-// Start runs the admission scheduler. Ticks every second until ctx is cancelled.
-// On each tick it discovers active events via Redis SCAN and admits from each.
+// Start runs the admission scheduler until ctx is cancelled.
+// Tick interval is controlled by cfg.SchedulerTickSecs (default 1s).
 func (s *Scheduler) Start(ctx context.Context) {
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(time.Duration(s.cfg.SchedulerTickSecs) * time.Second)
 	defer ticker.Stop()
 	applog.InfoWithContext(ctx, "scheduler started")
 	for {
