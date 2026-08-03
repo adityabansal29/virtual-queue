@@ -28,7 +28,6 @@ services:
     env_file: .env
     environment:
       REDIS_ADDR: redis-queue:6379
-      SSE_THRESHOLD: "10"
     depends_on:
       redis-queue:
         condition: service_healthy
@@ -40,8 +39,6 @@ services:
     env_file: .env
     environment:
       REDIS_ADDR: redis-queue:6379
-      SCHEDULER_TICK_SECS: "20"
-      DEFAULT_ADMIT_RATE: "1"
     depends_on:
       redis-queue:
         condition: service_healthy
