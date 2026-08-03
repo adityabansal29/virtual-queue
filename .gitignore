@@ -30,3 +30,23 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Built binaries
+stuborigin
+queueserver
+scheduler
+
+# Claude Code / GSD tooling
+.claude/agents/
+.claude/commands/
+.claude/gsd-core/
+.claude/gsd-file-manifest.json
+.claude/gsd-install-state.json
+.claude/gsd-profile
+.claude/.gsd-profile
+.claude/hooks/
+.claude/package.json
+.claude/scripts/
+
+# Playwright MCP artifacts
+.playwright-mcp/
