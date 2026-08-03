@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/adityabansal29/virtual-queue/internal/store"
+	applog "github.com/adityabansal29/virtual-queue/pkg/log"
 )
 
 // QueueStatusPoll handles GET /queue/status/:ticketId?mode=poll (or no mode param).
@@ -25,15 +25,15 @@ func (h *Handler) QueueStatusPoll(c *gin.Context) {
 		return
 	}
 
-	// Check if already admitted: token written by scheduler to ticket hash (QUEUE-08).
+	// Check if already admitted: token written by scheduler to ticket hash.
 	// Read-once: delete immediately so a second poll doesn't double-deliver.
-	if token, err := h.rdb.HGet(ctx, "ticket:"+ticketID, "admission_token").Result(); err == nil {
-		h.rdb.HDel(ctx, "ticket:"+ticketID, "admission_token")
+	if token, err := h.rdb.HGet(ctx, store.TicketKey(ticketID), "admission_token").Result(); err == nil {
+		h.rdb.HDel(ctx, store.TicketKey(ticketID), "admission_token")
 		c.JSON(http.StatusOK, gin.H{"type": "admitted", "token": token})
 		return
 	}
 
-	rank, err := store.GetPosition(ctx, h.rdb, "queue:"+eventID, ticketID)
+	rank, err := store.GetPosition(ctx, h.rdb, store.QueueKey(eventID), ticketID)
 	if err != nil || rank < 0 {
 		// Ticket popped from sorted set but token not yet written — transient window.
 		c.JSON(http.StatusOK, gin.H{"type": "pending"})
@@ -41,10 +41,9 @@ func (h *Handler) QueueStatusPoll(c *gin.Context) {
 	}
 
 	// UI-04: emit constrained flag when capacity is configured and headroom is exhausted.
-	// constrained is ONLY emitted on position responses (not admitted/pending).
-	capacityStr, _ := h.rdb.Get(ctx, "capacity:"+eventID).Result()
+	capacityStr, _ := h.rdb.Get(ctx, store.MaxAllowedSessionCountKey(eventID)).Result()
 	capacity, _ := strconv.ParseInt(capacityStr, 10, 64)
-	activeStr, _ := h.rdb.Get(ctx, "active:"+eventID).Result()
+	activeStr, _ := h.rdb.Get(ctx, store.ActiveSessionCountKey(eventID)).Result()
 	active, _ := strconv.ParseInt(activeStr, 10, 64)
 	constrained := capacity > 0 && (capacity-active) <= 0
 
@@ -76,19 +75,17 @@ func (h *Handler) QueueStatusSSE(c *gin.Context) {
 
 	flusher, ok := c.Writer.(http.Flusher)
 	if !ok {
-		// Should never happen with standard Gin ResponseWriter.
 		panic("QueueStatusSSE: gin.ResponseWriter does not implement http.Flusher")
 	}
 
 	// QUEUE-05: subscribe BEFORE reading initial rank so no admission event is missed.
 	pubsub := h.rdb.Subscribe(ctx,
-		"queue:tick:"+eventID,
-		"ticket:updates:"+ticketID,
+		store.QueueTickKey(eventID),
+		store.TicketUpdatesKey(ticketID),
 	)
 	defer pubsub.Close()
 
-	// Send initial position event if ticket is still in the queue.
-	if rank, err := store.GetPosition(ctx, h.rdb, "queue:"+eventID, ticketID); err == nil && rank >= 0 {
+	if rank, err := store.GetPosition(ctx, h.rdb, store.QueueKey(eventID), ticketID); err == nil && rank >= 0 {
 		fmt.Fprintf(c.Writer, "event: update\ndata: {\"type\":\"position\",\"value\":%d}\n\n", rank)
 		flusher.Flush()
 	}
@@ -101,16 +98,15 @@ func (h *Handler) QueueStatusSSE(c *gin.Context) {
 		case msg := <-pubsub.Channel():
 			var ev map[string]string
 			if err := json.Unmarshal([]byte(msg.Payload), &ev); err != nil {
-				slog.Warn("sse: failed to unmarshal pub/sub payload", "payload", msg.Payload, "error", err)
+				applog.WarnWithContext(ctx, "sse: failed to unmarshal pub/sub payload", "payload", msg.Payload, "error", err)
 				continue
 			}
 
 			switch ev["type"] {
 			case "tick":
-				rank, err := store.GetPosition(ctx, h.rdb, "queue:"+eventID, ticketID)
+				rank, err := store.GetPosition(ctx, h.rdb, store.QueueKey(eventID), ticketID)
 				if err != nil || rank < 0 {
-					// Ticket popped — stay in the loop and wait for the admitted pub/sub message.
-					slog.Debug("sse: ticket popped, awaiting admitted event", "ticketId", ticketID)
+					applog.DebugWithContext(ctx, "sse: ticket popped, awaiting admitted event", "ticketId", ticketID)
 					continue
 				}
 				data, _ := json.Marshal(map[string]any{"type": "position", "value": rank})

@@ -6,30 +6,26 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/adityabansal29/virtual-queue/internal/api"
 	"github.com/adityabansal29/virtual-queue/internal/config"
+	"github.com/adityabansal29/virtual-queue/internal/scheduler"
 	"github.com/adityabansal29/virtual-queue/internal/store"
+	"github.com/adityabansal29/virtual-queue/internal/token"
 )
 
 func main() {
 	cfg := config.Load()
 
-	slog.Info("queue server starting",
-		"port", cfg.Port,
+	slog.Info("scheduler starting",
 		"redis", cfg.RedisAddr,
 		"admission_secret", "set",
-		"session_secret", "set",
 	)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
-	_ = ctx // reserved for graceful shutdown wiring
 
 	rdb := store.NewQueueRedis(cfg.RedisAddr)
-	handler := api.NewHandler(cfg, rdb)
-	router := api.NewRouter(handler)
-
-	if err := router.Run(":" + cfg.Port); err != nil {
-		slog.Error("server failed", "error", err)
-	}
+	sched := scheduler.NewScheduler(rdb, cfg, func(ticketID, eventID string) (string, error) {
+		return token.IssueAdmission(ticketID, eventID, cfg.AdmissionSecret)
+	})
+	sched.Start(ctx)
 }

@@ -31,7 +31,7 @@ func NewRouter(h *Handler) *gin.Engine {
 	})
 
 	// Implemented endpoints
-	r.POST("/queue/join", h.Join)
+	r.GET("/queue/join", h.Join)
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 	})

@@ -32,6 +32,17 @@ services:
       redis-queue:
         condition: service_healthy
 
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.scheduler
+    env_file: .env
+    environment:
+      REDIS_ADDR: redis-queue:6379
+    depends_on:
+      redis-queue:
+        condition: service_healthy
+
   stuborigin:
     build:
       context: .

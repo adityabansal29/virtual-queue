@@ -2,10 +2,11 @@ package store
 
 import (
 	"context"
-	"log/slog"
 	"time"
 
 	"github.com/redis/go-redis/v9"
+
+	applog "github.com/adityabansal29/virtual-queue/pkg/log"
 )
 
 // NewQueueRedis creates and returns a Redis client for the queue service.
@@ -19,28 +20,24 @@ func NewQueueRedis(addr string) *redis.Client {
 	defer cancel()
 
 	if err := client.Ping(ctx).Err(); err != nil {
-		slog.Error("redis ping failed", "addr", addr, "error", err)
+		applog.ErrorWithContext(ctx, "redis ping failed", "addr", addr, "error", err)
 	}
 
 	return client
 }
 
-// getPositionScript atomically returns the 0-based rank of ticketID in queueKey.
-// Returns -1 if the ticket is not present (already admitted or expired).
-const getPositionScript = `
-local rank = redis.call('ZRANK', KEYS[1], ARGV[1])
-if rank == false then return -1 end
-return rank
-`
-
-// GetPosition returns the 0-based rank of ticketID in queueKey via a Lua script.
-// Returns -1 if the ticket is not in the sorted set (admitted or expired).
+// GetPosition returns the 0-based rank of ticketID in queueKey.
+// Returns -1, nil if the ticket is not in the sorted set (admitted or expired).
 func GetPosition(ctx context.Context, rdb *redis.Client, queueKey, ticketID string) (int64, error) {
-	return rdb.Eval(ctx, getPositionScript, []string{queueKey}, ticketID).Int64()
+	rank, err := rdb.ZRank(ctx, queueKey, ticketID).Result()
+	if err == redis.Nil {
+		return -1, nil
+	}
+	return rank, err
 }
 
-// EventIDFromTicket returns the eventId stored in ticket:{ticketID} hash.
+// EventIDFromTicket returns the eventId stored in the ticket hash.
 // Returns redis.Nil error if the ticket does not exist — caller should return 404.
 func EventIDFromTicket(ctx context.Context, rdb *redis.Client, ticketID string) (string, error) {
-	return rdb.HGet(ctx, "ticket:"+ticketID, "eventId").Result()
+	return rdb.HGet(ctx, TicketKey(ticketID), "eventId").Result()
 }

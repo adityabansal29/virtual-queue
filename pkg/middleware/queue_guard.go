@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -11,27 +12,24 @@ import (
 )
 
 // Config holds the parameters for the QueueGuard middleware.
-// RDB must point to the redis-origin client (D-03), NOT redis-queue.
+// RDB must point to the redis-origin client, NOT redis-queue.
 type Config struct {
 	AdmissionSecret string
 	SessionSecret   string
-	QueueURL        string
+	QueueJoinURL    string // GET /queue/join endpoint — linked from the error page
+	EventID         string // event this origin belongs to
 	RDB             *redis.Client
 }
 
-// QueueGuard returns a Gin middleware that enforces the two-cookie token model
-// (DESIGN.md Section 8). The exact flow:
-//  1. Session fast-path: valid q_session → pass through.
-//  2. No q_admission → redirect to queue.
-//  3. Invalid admission JWT → redirect to queue.
-//  4. SETNX token:{jti} — atomic one-time use (TOKEN-04). Failure → 403.
-//  5. Increment active:{eventId}.
-//  6. Issue q_session signed with SessionSecret.
-//  7. Clear q_admission.
-//  8. Pass to handler.
+// QueueGuard enforces the two-cookie token model (DESIGN.md §8).
+//
+// Fast path:   valid q_session → pass through.
+// Admission:   valid q_admission → SETNX (TOKEN-04) → issue q_session → pass through.
+// No cookie:   return 401 error page with a manual "Join the queue" link.
+//              No auto-redirect — avoids origin→EW dependency and infinite-loop risk.
 func QueueGuard(cfg Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 1. Session cookie fast-path — verified with SESSION_SECRET.
+		// 1. Session fast-path.
 		if sc, err := c.Cookie("q_session"); err == nil {
 			if _, err := token.ValidateSession(sc, cfg.SessionSecret); err == nil {
 				c.Next()
@@ -42,41 +40,49 @@ func QueueGuard(cfg Config) gin.HandlerFunc {
 		// 2. Admission token required.
 		ac, err := c.Cookie("q_admission")
 		if err != nil {
-			target := cfg.QueueURL + "?target=" + url.QueryEscape(c.Request.URL.String())
-			c.Redirect(http.StatusFound, target)
+			c.Data(http.StatusUnauthorized, "text/html; charset=utf-8", []byte(queueErrorPage(cfg, c.Request.URL.String())))
 			c.Abort()
 			return
 		}
 
-		// 3. Verify JWT signature and expiry against ADMISSION_SECRET.
+		// 3. Verify JWT.
 		claims, err := token.ValidateJWT(ac, cfg.AdmissionSecret)
 		if err != nil {
-			target := cfg.QueueURL + "?target=" + url.QueryEscape(c.Request.URL.String())
-			c.Redirect(http.StatusFound, target)
+			c.Data(http.StatusUnauthorized, "text/html; charset=utf-8", []byte(queueErrorPage(cfg, c.Request.URL.String())))
 			c.Abort()
 			return
 		}
 
-		// 4. SETNX — atomic one-time enforcement (TOKEN-04).
-		// Redis SETNX guarantees: even if two requests with identical JWTs arrive
-		// simultaneously, exactly one Set call returns true. The other returns false
-		// and gets 403. No race condition possible.
+		// 4. SETNX — one-time enforcement (TOKEN-04).
 		set, err := cfg.RDB.SetNX(c.Request.Context(), "token:"+claims.ID, "used", 30*time.Minute).Result()
 		if err != nil || !set {
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}
 
-		// 5. Increment active count (TOKEN-05, capacity accounting for Phase 2).
-		cfg.RDB.Incr(c.Request.Context(), "active:"+claims.EventID)
-
-		// 6. Issue q_session cookie signed with SESSION_SECRET.
+		// 5. Issue q_session, clear q_admission.
 		sc, _ := token.IssueSession(claims.Subject, claims.EventID, cfg.SessionSecret)
 		c.SetCookie("q_session", sc, 1800, "/", "", true, true)
-
-		// 7. Clear q_admission (TOKEN-06 — consumed, must not be reused).
 		c.SetCookie("q_admission", "", -1, "/", "", true, true)
 
 		c.Next()
 	}
+}
+
+func queueErrorPage(cfg Config, requestURL string) string {
+	joinLink := fmt.Sprintf("%s?eventId=%s&target=%s",
+		cfg.QueueJoinURL, url.QueryEscape(cfg.EventID), url.QueryEscape(requestURL))
+	return fmt.Sprintf(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Queue Required</title>
+</head>
+<body style="max-width:480px;margin:64px auto;font-family:system-ui,-apple-system,sans-serif">
+<h1 style="font-size:20px;font-weight:600">You need a queue ticket to access this page.</h1>
+<p style="color:#6b7280">Join the waiting room to get in line. You will be redirected automatically when admitted.</p>
+<a href="%s" style="display:inline-block;margin-top:16px;padding:10px 20px;background:#2563eb;color:#fff;border-radius:4px;text-decoration:none">Join the queue</a>
+</body>
+</html>`, joinLink)
 }
