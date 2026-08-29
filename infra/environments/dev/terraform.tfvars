@@ -1,4 +1,3 @@
 aws_region  = "ap-south-1"
 environment = "dev"
-# FILL IN after manually creating the S3 state bucket.
-tf_state_bucket = ""
+tf_state_bucket = "virtual-queue-tf-state-497675597474-ap-south-1-an"
