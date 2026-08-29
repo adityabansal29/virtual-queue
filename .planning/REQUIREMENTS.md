@@ -105,7 +105,7 @@
 | UI-07 | Phase 2 | Complete |
 | UI-08 | Phase 2 | Complete |
 | INFRA-01 | Phase 1 | Complete |
-| INFRA-02 | Phase 3 | Pending |
+| INFRA-02 | Phase 3 | Complete |
 | INFRA-03 | Phase 3 | Complete |
 | INFRA-04 | Phase 3 | Pending |
 | INFRA-05 | Phase 3 | Complete |
