@@ -84,7 +84,22 @@ Plans:
   4. DynamoDB tables exist and queue-sessions audit records are written for each admitted ticket; queue-events config table is readable by the admin API
   5. Admitted events appear in the SQS FIFO queue with MessageGroupId = eventId within 2 seconds of admission
 
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 03-01-PLAN.md — [Wave 1, tracer] Terraform skeleton: remote backend, module structure, networking (VPC/subnets/SGs), ECR repos
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 03-02-PLAN.md — [Wave 2, parallel] ECS Fargate + ElastiCache Redis + DynamoDB + SQS modules; SSM secrets wiring
+- [ ] 03-03-PLAN.md — [Wave 2, parallel] Go internal/aws package (DynamoWriter + SQSEmitter); scheduler injection; GitHub Actions CI/CD
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 03-04-PLAN.md — [Wave 3, parallel] S3 + CloudFront static queue page; SameSite=Lax fix; per-event custom HTML upload/redirect
+- [ ] 03-05-PLAN.md — [Wave 3, parallel] CloudFront Function edge JWT enforcement; CloudFront KVS; stub origin ALB lock-down
 
 ## Progress
 
