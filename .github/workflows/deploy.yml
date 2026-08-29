@@ -1,0 +1,56 @@
+# Required GitHub Secrets:
+# AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION
+# ECR_QUEUESERVER_URL, ECR_SCHEDULER_URL, ECR_STUBORIGIN_URL
+# ECS_CLUSTER_NAME, ECS_SERVICE_QUEUESERVER, ECS_SERVICE_SCHEDULER, ECS_SERVICE_STUBORIGIN
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - service: queueserver
+            dockerfile: Dockerfile.queueserver
+            ecr_secret: ECR_QUEUESERVER_URL
+          - service: scheduler
+            dockerfile: Dockerfile.scheduler
+            ecr_secret: ECR_SCHEDULER_URL
+          - service: stuborigin
+            dockerfile: Dockerfile.stuborigin
+            ecr_secret: ECR_STUBORIGIN_URL
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - uses: aws-actions/amazon-ecr-login@v2
+      - name: Build and push ${{ matrix.service }}
+        env:
+          ECR_URL: ${{ secrets[matrix.ecr_secret] }}
+        run: |
+          docker build -f "${{ matrix.dockerfile }}" -t "$ECR_URL:${{ github.sha }}" -t "$ECR_URL:latest" .
+          docker push "$ECR_URL:${{ github.sha }}"
+          docker push "$ECR_URL:latest"
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Deploy queueserver
+        run: aws ecs update-service --cluster "${{ secrets.ECS_CLUSTER_NAME }}" --service "${{ secrets.ECS_SERVICE_QUEUESERVER }}" --force-new-deployment --region "${{ secrets.AWS_REGION }}"
+      - name: Deploy scheduler
+        run: aws ecs update-service --cluster "${{ secrets.ECS_CLUSTER_NAME }}" --service "${{ secrets.ECS_SERVICE_SCHEDULER }}" --force-new-deployment --region "${{ secrets.AWS_REGION }}"
+      - name: Deploy stuborigin
+        run: aws ecs update-service --cluster "${{ secrets.ECS_CLUSTER_NAME }}" --service "${{ secrets.ECS_SERVICE_STUBORIGIN }}" --force-new-deployment --region "${{ secrets.AWS_REGION }}"
