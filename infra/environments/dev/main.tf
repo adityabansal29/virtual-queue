@@ -36,6 +36,7 @@ module "ecs" {
   dynamodb_audit_log_table_arn = module.dynamodb.queue_audit_log_table_arn
   sqs_admission_queue_arn      = module.sqs.admission_events_queue_arn
   sqs_admission_queue_url      = module.sqs.admission_events_queue_url
+  events_bucket_arn            = module.s3.events_bucket_arn
   queue_page_url               = "https://${module.cloudfront.queue_page_cf_domain}/queue/"
   events_cf_domain             = module.cloudfront.events_cf_domain
   events_bucket_name           = module.s3.events_bucket_id

@@ -47,9 +47,8 @@ resource "aws_cloudfront_distribution" "events" {
 
 resource "aws_s3_bucket_policy" "queue_page" {
   bucket = var.queue_page_bucket_id
-  policy = jsonencode({ Version = "2012-10-17", Statement = [{ Effect = "Allow", Principal = { Service = "cloudfront.amazonaws.com" }, Action = "s3:GetObject", Resource = "${var.queue_page_bucket_arn}/*", Condition = { StringEquals = { "AWS:SourceArn" = aws_cloudfront_distribution.queue_page.arn } } }] })
-}
-resource "aws_s3_bucket_policy" "events" {
-  bucket = var.events_bucket_id
-  policy = jsonencode({ Version = "2012-10-17", Statement = [{ Effect = "Allow", Principal = { Service = "cloudfront.amazonaws.com" }, Action = "s3:GetObject", Resource = "${var.events_bucket_arn}/*", Condition = { StringEquals = { "AWS:SourceArn" = aws_cloudfront_distribution.events.arn } } }] })
+  policy = jsonencode({ Version = "2012-10-17", Statement = [
+    { Effect = "Allow", Principal = { Service = "cloudfront.amazonaws.com" }, Action = "s3:GetObject", Resource = "${var.queue_page_bucket_arn}/*", Condition = { StringEquals = { "AWS:SourceArn" = aws_cloudfront_distribution.queue_page.arn } } },
+    { Effect = "Allow", Principal = { Service = "cloudfront.amazonaws.com" }, Action = "s3:GetObject", Resource = "${var.queue_page_bucket_arn}/*", Condition = { StringEquals = { "AWS:SourceArn" = aws_cloudfront_distribution.events.arn } } }
+  ] })
 }
