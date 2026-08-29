@@ -6,10 +6,13 @@ import (
 	"strconv"
 	"time"
 
+	jwtpkg "github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 
+	internalaws "github.com/adityabansal29/virtual-queue/internal/aws"
 	"github.com/adityabansal29/virtual-queue/internal/config"
 	"github.com/adityabansal29/virtual-queue/internal/store"
+	internaltoken "github.com/adityabansal29/virtual-queue/internal/token"
 	applog "github.com/adityabansal29/virtual-queue/pkg/log"
 )
 
@@ -20,11 +23,13 @@ type Scheduler struct {
 	rdb        *redis.Client
 	cfg        config.SchedulerConfig
 	issueToken func(ticketID, eventID string) (string, error)
+	dw         *internalaws.DynamoWriter
+	se         *internalaws.SQSEmitter
 }
 
 // NewScheduler constructs a Scheduler with the given dependencies.
-func NewScheduler(rdb *redis.Client, cfg config.SchedulerConfig, issueToken func(string, string) (string, error)) *Scheduler {
-	return &Scheduler{rdb: rdb, cfg: cfg, issueToken: issueToken}
+func NewScheduler(rdb *redis.Client, cfg config.SchedulerConfig, issueToken func(string, string) (string, error), dw *internalaws.DynamoWriter, se *internalaws.SQSEmitter) *Scheduler {
+	return &Scheduler{rdb: rdb, cfg: cfg, issueToken: issueToken, dw: dw, se: se}
 }
 
 // Start runs the admission scheduler until ctx is cancelled.
@@ -121,6 +126,22 @@ func (s *Scheduler) admitBatch(ctx context.Context, eventID string, n int64) {
 
 		if err := s.rdb.HSet(ctx, store.TicketKey(ticketID), "admission_token", jwt).Err(); err != nil {
 			applog.ErrorWithContext(ctx, "scheduler: hset admission_token failed", "ticketId", ticketID, "error", err)
+		} else {
+			jti := ""
+			parsed, parseErr := jwtpkg.ParseWithClaims(jwt, &internaltoken.AdmissionClaims{}, func(*jwtpkg.Token) (interface{}, error) {
+				return []byte(s.cfg.AdmissionSecret), nil
+			})
+			if parseErr == nil {
+				if claims, ok := parsed.Claims.(*internaltoken.AdmissionClaims); ok {
+					jti = claims.ID
+				}
+			}
+			if err := s.dw.Write(ctx, internalaws.SessionRecord{TicketID: ticketID, EventID: eventID, JTI: jti, AdmittedAt: time.Now()}); err != nil {
+				applog.ErrorWithContext(ctx, "scheduler: dynamo write failed", "ticketId", ticketID, "error", err)
+			}
+			if err := s.se.Emit(ctx, internalaws.AdmissionEvent{TicketID: ticketID, EventID: eventID, JTI: jti}); err != nil {
+				applog.ErrorWithContext(ctx, "scheduler: sqs emit failed", "ticketId", ticketID, "error", err)
+			}
 		}
 
 		s.rdb.Incr(ctx, store.ActiveSessionCountKey(eventID)) //nolint:errcheck
