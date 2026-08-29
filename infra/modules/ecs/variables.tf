@@ -117,3 +117,18 @@ variable "event_id" {
   type    = string
   default = "evt-001"
 }
+
+variable "events_cf_domain" {
+  type    = string
+  default = ""
+}
+
+variable "events_bucket_name" {
+  type    = string
+  default = ""
+}
+
+variable "cors_allowed_origins" {
+  type    = string
+  default = ""
+}

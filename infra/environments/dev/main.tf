@@ -36,6 +36,10 @@ module "ecs" {
   dynamodb_audit_log_table_arn = module.dynamodb.queue_audit_log_table_arn
   sqs_admission_queue_arn      = module.sqs.admission_events_queue_arn
   sqs_admission_queue_url      = module.sqs.admission_events_queue_url
+  queue_page_url               = "https://${module.cloudfront.queue_page_cf_domain}/queue/"
+  events_cf_domain             = module.cloudfront.events_cf_domain
+  events_bucket_name           = module.s3.events_bucket_id
+  cors_allowed_origins         = "https://${module.cloudfront.queue_page_cf_domain}"
 }
 
 module "redis" {
@@ -70,12 +74,20 @@ data "aws_ssm_parameter" "session_secret" {
   name = "/virtual-queue/dev/SESSION_SECRET"
 }
 
-# implemented in 03-04/03-05
 module "s3" {
-  source = "../../modules/s3"
+  source      = "../../modules/s3"
+  environment = var.environment
 }
 
-# implemented in 03-04/03-05
 module "cloudfront" {
-  source = "../../modules/cloudfront"
+  source                                 = "../../modules/cloudfront"
+  environment                            = var.environment
+  queue_page_bucket_id                   = module.s3.queue_page_bucket_id
+  queue_page_bucket_arn                  = module.s3.queue_page_bucket_arn
+  queue_page_bucket_regional_domain_name = module.s3.queue_page_bucket_regional_domain_name
+  queue_page_oac_id                      = module.s3.queue_page_oac_id
+  events_bucket_id                       = module.s3.events_bucket_id
+  events_bucket_arn                      = module.s3.events_bucket_arn
+  events_bucket_regional_domain_name     = module.s3.events_bucket_regional_domain_name
+  events_oac_id                          = module.s3.events_oac_id
 }

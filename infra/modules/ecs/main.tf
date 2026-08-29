@@ -81,7 +81,8 @@ resource "aws_ecs_task_definition" "queueserver" {
     environment = [
       { name = "REDIS_ADDR", value = var.redis_queue_addr }, { name = "PORT", value = "8080" },
       { name = "AWS_REGION", value = var.aws_region }, { name = "QUEUE_PAGE_URL", value = var.queue_page_url },
-      { name = "EVENTS_BUCKET_NAME", value = "${var.environment}-virtual-queue-events" }, { name = "EVENTS_CF_DOMAIN", value = "" }
+      { name = "EVENTS_BUCKET_NAME", value = var.events_bucket_name }, { name = "EVENTS_CF_DOMAIN", value = var.events_cf_domain },
+      { name = "CORS_ALLOWED_ORIGINS", value = var.cors_allowed_origins }
     ]
     logConfiguration = { logDriver = "awslogs", options = merge(local.log_options, { "awslogs-group" = aws_cloudwatch_log_group.queueserver.name }) }
   }])
