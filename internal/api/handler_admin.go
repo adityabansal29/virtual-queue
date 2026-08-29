@@ -1,13 +1,36 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-gonic/gin"
 
 	"github.com/adityabansal29/virtual-queue/internal/store"
 )
+
+func (h *Handler) GetPageUploadURL(c *gin.Context) {
+	if h.s3Presign == nil || h.cfg.EventsBucketName == "" {
+		c.JSON(http.StatusNotImplemented, gin.H{"error": "S3 not configured"})
+		return
+	}
+	eventID := c.Param("id")
+	if eventID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "eventId required"})
+		return
+	}
+	key := fmt.Sprintf("events/%s/page.html", eventID)
+	req, err := h.s3Presign.PresignPutObject(c.Request.Context(), &s3.PutObjectInput{Bucket: aws.String(h.cfg.EventsBucketName), Key: aws.String(key), ContentType: aws.String("text/html")}, s3.WithPresignExpires(15*time.Minute))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "presign failed"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"url": req.URL})
+}
 
 // UpdateRate handles PUT /queue/rate/:eventId.
 // Sets rate and optional capacity in Redis.

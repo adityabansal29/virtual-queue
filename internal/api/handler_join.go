@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
@@ -18,13 +20,19 @@ import (
 
 // Handler holds shared dependencies for all HTTP handlers.
 type Handler struct {
-	cfg config.QueueServerConfig
-	rdb *redis.Client
+	cfg       config.QueueServerConfig
+	rdb       *redis.Client
+	s3Client  *s3.Client
+	s3Presign *s3.PresignClient
 }
 
 // NewHandler creates a Handler with the given config and Redis client.
-func NewHandler(cfg config.QueueServerConfig, rdb *redis.Client) *Handler {
-	return &Handler{cfg: cfg, rdb: rdb}
+func NewHandler(cfg config.QueueServerConfig, rdb *redis.Client, s3c *s3.Client) *Handler {
+	var ps *s3.PresignClient
+	if s3c != nil {
+		ps = s3.NewPresignClient(s3c)
+	}
+	return &Handler{cfg: cfg, rdb: rdb, s3Client: s3c, s3Presign: ps}
 }
 
 // Join handles GET /queue/join?eventId=...&target=...
@@ -49,6 +57,14 @@ func (h *Handler) Join(c *gin.Context) {
 			return
 		}
 		c.SetCookie("q_ticket", ticketID, config.QTicketCookieMaxAge, "/", "", false, true)
+	}
+
+	if h.s3Client != nil && h.cfg.EventsBucketName != "" && h.cfg.EventsCFDomain != "" {
+		key := fmt.Sprintf("events/%s/page.html", eventID)
+		if _, err := h.s3Client.HeadObject(c.Request.Context(), &s3.HeadObjectInput{Bucket: aws.String(h.cfg.EventsBucketName), Key: aws.String(key)}); err == nil {
+			c.Redirect(http.StatusFound, fmt.Sprintf("https://%s/%s", h.cfg.EventsCFDomain, key))
+			return
+		}
 	}
 
 	dest := fmt.Sprintf("%s?ticket=%s&target=%s",
