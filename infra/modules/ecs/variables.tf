@@ -97,3 +97,23 @@ variable "sqs_admission_queue_url" {
   type    = string
   default = ""
 }
+
+variable "events_bucket_arn" {
+  type    = string
+  default = "*"
+}
+
+variable "queue_page_url" {
+  type    = string
+  default = ""
+}
+
+variable "queue_join_url" {
+  type    = string
+  default = ""
+}
+
+variable "event_id" {
+  type    = string
+  default = "evt-001"
+}
