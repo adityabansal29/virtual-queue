@@ -20,7 +20,7 @@ function handleAdmitted(token) {
     navigating = true;
     if (es) es.close();
     if (pollTimer) clearInterval(pollTimer);
-    document.cookie = 'q_admission=' + token + '; path=/; max-age=1800; SameSite=Strict';
+    document.cookie = 'q_admission=' + token + '; path=/; max-age=1800; SameSite=Lax';
     window.location.href = sessionStorage.getItem('q_target') || '/';
 }
 

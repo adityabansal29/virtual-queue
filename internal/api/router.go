@@ -2,6 +2,8 @@ package api
 
 import (
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,6 +17,9 @@ func NewRouter(h *Handler) *gin.Engine {
 	r.Use(func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
 		allowed := []string{"http://localhost:8082", "http://localhost:8081"}
+		if extra := os.Getenv("CORS_ALLOWED_ORIGINS"); extra != "" {
+			allowed = append(allowed, strings.Split(extra, ",")...)
+		}
 		for _, o := range allowed {
 			if origin == o {
 				c.Header("Access-Control-Allow-Origin", o)
@@ -50,6 +55,7 @@ func NewRouter(h *Handler) *gin.Engine {
 	r.PUT("/queue/rate/:eventId", h.UpdateRate)
 	r.GET("/queue/config/:eventId", h.GetConfig)
 	r.GET("/queue/events", h.GetEvents)
+	r.GET("/queue/events/:id/page-upload-url", h.GetPageUploadURL)
 
 	return r
 }

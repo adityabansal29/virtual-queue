@@ -12,7 +12,7 @@ import (
 
 const (
 	// Redis key TTLs
-	TicketKeyTTL    = 2 * time.Hour    // ticket:{ticketID} hash — expires if never admitted
+	TicketKeyTTL     = 2 * time.Hour    // ticket:{ticketID} hash — expires if never admitted
 	AdmissionUsedTTL = 30 * time.Minute // token:{jti} one-time SETNX (TOKEN-04)
 	SchedulerLockTTL = 10 * time.Second // scheduler:lock:{eventID} leader lock
 
@@ -39,6 +39,8 @@ type QueueServerConfig struct {
 	SSEThreshold     int
 	DefaultAdmitRate int64
 	QueuePageURL     string
+	EventsBucketName string
+	EventsCFDomain   string
 }
 
 // SchedulerConfig holds config for the admission scheduler process.
@@ -70,6 +72,8 @@ func LoadQueueServer() QueueServerConfig {
 		SSEThreshold:     getEnvInt("SSE_THRESHOLD", 200),
 		DefaultAdmitRate: getEnvInt64("DEFAULT_ADMIT_RATE", 60),
 		QueuePageURL:     getEnvOrDefault("QUEUE_PAGE_URL", "http://localhost:8082/queue/"),
+		EventsBucketName: getEnvOrDefault("EVENTS_BUCKET_NAME", ""),
+		EventsCFDomain:   getEnvOrDefault("EVENTS_CF_DOMAIN", ""),
 	}
 }
 
