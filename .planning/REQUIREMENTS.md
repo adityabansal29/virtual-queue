@@ -29,14 +29,14 @@
 
 ### Frontend
 
-- [ ] **UI-01**: Queue waiting page is a static HTML/JS shell (identical for every user) served from S3 via CDN
-- [ ] **UI-02**: Queue page starts in polling mode (every 5s) and upgrades to SSE when rank < SSE_THRESHOLD without page reload
-- [ ] **UI-03**: Queue page displays position ("X people ahead") and estimated wait time (~rank/admitRatePerMin minutes)
-- [ ] **UI-04**: Queue page shows "waiting for capacity" state when server returns `constrained: true` (ceiling-blocked queue does not show a decrementing countdown)
-- [ ] **UI-05**: On admission event, queue page sets q_admission cookie, reads target URL from sessionStorage, redirects to protected origin
-- [ ] **UI-06**: Admin dashboard shows live queue depth, active users, admit rate, capacity, and capacity headroom
-- [ ] **UI-07**: Admin dashboard allows live adjustment of admit rate and capacity ceiling via PUT /queue/rate/:eventId
-- [ ] **UI-08**: Stub ticket checkout validates q_session cookie and displays simulated seat selection page
+- [x] **UI-01**: Queue waiting page is a static HTML/JS shell (identical for every user) served from S3 via CDN
+- [x] **UI-02**: Queue page starts in polling mode (every 5s) and upgrades to SSE when rank < SSE_THRESHOLD without page reload
+- [x] **UI-03**: Queue page displays position ("X people ahead") and estimated wait time (~rank/admitRatePerMin minutes)
+- [x] **UI-04**: Queue page shows "waiting for capacity" state when server returns `constrained: true` (ceiling-blocked queue does not show a decrementing countdown)
+- [x] **UI-05**: On admission event, queue page sets q_admission cookie, reads target URL from sessionStorage, redirects to protected origin
+- [x] **UI-06**: Admin dashboard shows live queue depth, active users, admit rate, capacity, and capacity headroom
+- [x] **UI-07**: Admin dashboard allows live adjustment of admit rate and capacity ceiling via PUT /queue/rate/:eventId
+- [x] **UI-08**: Stub ticket checkout validates q_session cookie and displays simulated seat selection page
 
 ### Infrastructure
 
@@ -96,14 +96,14 @@
 | TOKEN-05 | Phase 1 | Complete |
 | TOKEN-06 | Phase 1 | Complete |
 | TOKEN-07 | Phase 1 | Complete |
-| UI-01 | Phase 2 | Pending |
-| UI-02 | Phase 2 | Pending |
-| UI-03 | Phase 2 | Pending |
-| UI-04 | Phase 2 | Pending |
-| UI-05 | Phase 2 | Pending |
-| UI-06 | Phase 2 | Pending |
-| UI-07 | Phase 2 | Pending |
-| UI-08 | Phase 2 | Pending |
+| UI-01 | Phase 2 | Complete |
+| UI-02 | Phase 2 | Complete |
+| UI-03 | Phase 2 | Complete |
+| UI-04 | Phase 2 | Complete |
+| UI-05 | Phase 2 | Complete |
+| UI-06 | Phase 2 | Complete |
+| UI-07 | Phase 2 | Complete |
+| UI-08 | Phase 2 | Complete |
 | INFRA-01 | Phase 1 | Complete |
 | INFRA-02 | Phase 3 | Pending |
 | INFRA-03 | Phase 3 | Pending |

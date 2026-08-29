@@ -12,7 +12,9 @@ A waiting user must always see an accurate position, and an admitted user must a
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ Static queue waiting page with poll→SSE crossover and admission redirect — Phase 2
+- ✓ Stub checkout with session validation and simulated seat selection — Phase 2
+- ✓ Admin dashboard with live queue stats and rate/capacity controls — Phase 2
 
 ### Active
 
@@ -23,9 +25,6 @@ A waiting user must always see an accurate position, and an admitted user must a
 - [ ] Two-cookie token model: q_admission (one-time JWT) + q_session (ongoing signed cookie)
 - [ ] SETNX one-time use enforcement + active count increment at origin
 - [ ] Akamai EdgeWorker logic implemented as Go middleware (real Akamai deployment deferred)
-- [ ] Static queue waiting page (HTML/JS) with poll→SSE crossover and admission redirect
-- [ ] Stub ticket checkout origin that validates session cookie and simulates seat selection
-- [ ] Simple web admin dashboard: live queue depth, active users, admit rate, capacity controls
 - [ ] Full AWS infrastructure: ECS Fargate, ElastiCache Redis, S3, DynamoDB, SQS FIFO
 - [ ] Local dev environment via Docker Compose (Redis, queue API, stub origin, admin UI)
 
@@ -56,11 +55,11 @@ Design is fully specified in `DESIGN.md` (v3) at repo root. Key resolved decisio
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Akamai EdgeWorker as Go middleware locally | No account yet; same HMAC logic, different runtime | — Pending |
-| Hybrid SSE/poll (threshold 200) | Caps persistent connections regardless of queue depth | — Pending |
-| Two independent secrets | Different compromise blast radii; independent rotation | — Pending |
-| SETNX at origin, not edge | Edge has no VPC/Redis access | — Pending |
-| Docker Compose for local dev | Full stack runnable without AWS account | — Pending |
+| Akamai EdgeWorker as Go middleware locally | No account yet; same HMAC logic, different runtime | Validated in Phase 1 |
+| Hybrid SSE/poll (threshold 200) | Caps persistent connections regardless of queue depth | Validated in Phase 2 |
+| Two independent secrets | Different compromise blast radii; independent rotation | Validated in Phase 1 |
+| SETNX at origin, not edge | Edge has no VPC/Redis access | Validated in Phase 1 |
+| Docker Compose for local dev | Full stack runnable without AWS account | Validated in Phase 1/2 |
 
 ## Evolution
 
@@ -80,4 +79,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-02 after initialization*
+*Last updated: 2026-08-29 after Phase 2*
