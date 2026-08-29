@@ -98,7 +98,7 @@ variable "sqs_admission_queue_url" {
   default = ""
 }
 
-variable "events_bucket_arn" {
+variable "queue_page_bucket_arn" {
   type    = string
   default = "*"
 }
@@ -118,12 +118,7 @@ variable "event_id" {
   default = "evt-001"
 }
 
-variable "events_cf_domain" {
-  type    = string
-  default = ""
-}
-
-variable "events_bucket_name" {
+variable "queue_page_bucket_name" {
   type    = string
   default = ""
 }

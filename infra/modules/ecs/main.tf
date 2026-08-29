@@ -38,7 +38,7 @@ resource "aws_iam_role" "ecs_task_role" {
       Statement = [
         { Effect = "Allow", Action = ["dynamodb:PutItem"], Resource = [var.dynamodb_sessions_table_arn, var.dynamodb_events_table_arn, var.dynamodb_audit_log_table_arn] },
         { Effect = "Allow", Action = ["sqs:SendMessage"], Resource = [var.sqs_admission_queue_arn] },
-        { Effect = "Allow", Action = ["s3:HeadObject", "s3:GetObject", "s3:PutObject"], Resource = [var.events_bucket_arn] }
+        { Effect = "Allow", Action = ["s3:HeadObject", "s3:GetObject", "s3:PutObject"], Resource = [var.queue_page_bucket_arn] }
       ]
     })
   }
@@ -81,7 +81,7 @@ resource "aws_ecs_task_definition" "queueserver" {
     environment = [
       { name = "REDIS_ADDR", value = var.redis_queue_addr }, { name = "PORT", value = "8080" },
       { name = "AWS_REGION", value = var.aws_region }, { name = "QUEUE_PAGE_URL", value = var.queue_page_url },
-      { name = "EVENTS_BUCKET_NAME", value = var.events_bucket_name }, { name = "EVENTS_CF_DOMAIN", value = var.events_cf_domain },
+      { name = "QUEUE_PAGE_BUCKET_NAME", value = var.queue_page_bucket_name },
       { name = "CORS_ALLOWED_ORIGINS", value = var.cors_allowed_origins }
     ]
     logConfiguration = { logDriver = "awslogs", options = merge(local.log_options, { "awslogs-group" = aws_cloudwatch_log_group.queueserver.name }) }

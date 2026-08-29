@@ -17,3 +17,7 @@ output "queue_events_table_name" {
 output "queue_audit_log_table_arn" {
   value = aws_dynamodb_table.queue_audit_log.arn
 }
+
+output "queue_audit_log_table_name" {
+  value = aws_dynamodb_table.queue_audit_log.name
+}

@@ -27,7 +27,7 @@ func main() {
 
 	rdb := store.NewQueueRedis(cfg.RedisAddr)
 	var s3Client *s3.Client
-	if cfg.EventsBucketName != "" {
+	if cfg.QueuePageBucketName != "" {
 		if awsCfg, err := awsconfig.LoadDefaultConfig(context.Background()); err == nil {
 			s3Client = s3.NewFromConfig(awsCfg)
 		}

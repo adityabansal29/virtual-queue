@@ -59,11 +59,14 @@ func (h *Handler) Join(c *gin.Context) {
 		c.SetCookie("q_ticket", ticketID, config.QTicketCookieMaxAge, "/", "", false, true)
 	}
 
-	if h.s3Client != nil && h.cfg.EventsBucketName != "" && h.cfg.EventsCFDomain != "" {
+	if h.s3Client != nil && h.cfg.QueuePageBucketName != "" {
 		key := fmt.Sprintf("events/%s/page.html", eventID)
-		if _, err := h.s3Client.HeadObject(c.Request.Context(), &s3.HeadObjectInput{Bucket: aws.String(h.cfg.EventsBucketName), Key: aws.String(key)}); err == nil {
-			c.Redirect(http.StatusFound, fmt.Sprintf("https://%s/%s", h.cfg.EventsCFDomain, key))
-			return
+		if _, err := h.s3Client.HeadObject(c.Request.Context(), &s3.HeadObjectInput{Bucket: aws.String(h.cfg.QueuePageBucketName), Key: aws.String(key)}); err == nil {
+			if pageURL, err := url.Parse(h.cfg.QueuePageURL); err == nil && pageURL.Scheme != "" && pageURL.Host != "" {
+				pageURL.Path = "/" + key
+				c.Redirect(http.StatusFound, pageURL.String())
+				return
+			}
 		}
 	}
 

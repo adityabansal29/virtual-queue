@@ -12,7 +12,7 @@ Implemented static and per-event page delivery through one private S3 content bu
 ## Delivered
 
 - Added one private content S3 bucket with public access blocked; shared assets use `queue/` and event pages use `events/{eventId}/`.
-- Added two SigV4 CloudFront distributions using that bucket, with one combined CloudFront-only bucket policy.
+- Added one SigV4 CloudFront distribution using that bucket; both `queue/` and `events/` paths share its CloudFront domain and bucket policy.
 - Wired CDN domains and bucket names into the ECS queueserver configuration.
 - Changed the admission cookie to `SameSite=Lax` and made CORS origins configurable.
 - Added S3-backed per-event page detection and a 15-minute presigned HTML upload endpoint.
@@ -30,7 +30,9 @@ No AWS resources were applied.
 
 ## Consolidation amendment
 
-The static and event content buckets were consolidated into `dev-virtual-queue-content`. The existing output names remain as compatibility aliases for the Terraform wiring.
+The static and event content buckets were consolidated into `dev-virtual-queue-content`; Terraform now uses the canonical queue-page bucket outputs.
+
+CloudFront was subsequently consolidated as well: event-page URLs now use the queue-page distribution domain, with path separation inside the shared origin.
 
 ## Commits
 

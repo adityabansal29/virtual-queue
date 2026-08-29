@@ -14,7 +14,7 @@ import (
 )
 
 func (h *Handler) GetPageUploadURL(c *gin.Context) {
-	if h.s3Presign == nil || h.cfg.EventsBucketName == "" {
+	if h.s3Presign == nil || h.cfg.QueuePageBucketName == "" {
 		c.JSON(http.StatusNotImplemented, gin.H{"error": "S3 not configured"})
 		return
 	}
@@ -24,7 +24,7 @@ func (h *Handler) GetPageUploadURL(c *gin.Context) {
 		return
 	}
 	key := fmt.Sprintf("events/%s/page.html", eventID)
-	req, err := h.s3Presign.PresignPutObject(c.Request.Context(), &s3.PutObjectInput{Bucket: aws.String(h.cfg.EventsBucketName), Key: aws.String(key), ContentType: aws.String("text/html")}, s3.WithPresignExpires(15*time.Minute))
+	req, err := h.s3Presign.PresignPutObject(c.Request.Context(), &s3.PutObjectInput{Bucket: aws.String(h.cfg.QueuePageBucketName), Key: aws.String(key), ContentType: aws.String("text/html")}, s3.WithPresignExpires(15*time.Minute))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "presign failed"})
 		return

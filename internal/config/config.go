@@ -34,13 +34,12 @@ const (
 // QueueServerConfig holds config for the HTTP queue API server.
 // No secrets: the queue server does not sign or verify any tokens.
 type QueueServerConfig struct {
-	RedisAddr        string
-	Port             string
-	SSEThreshold     int
-	DefaultAdmitRate int64
-	QueuePageURL     string
-	EventsBucketName string
-	EventsCFDomain   string
+	RedisAddr           string
+	Port                string
+	SSEThreshold        int
+	DefaultAdmitRate    int64
+	QueuePageURL        string
+	QueuePageBucketName string
 }
 
 // SchedulerConfig holds config for the admission scheduler process.
@@ -67,13 +66,12 @@ type StubOriginConfig struct {
 
 func LoadQueueServer() QueueServerConfig {
 	return QueueServerConfig{
-		RedisAddr:        getEnvOrDefault("REDIS_ADDR", "redis-queue:6379"),
-		Port:             getEnvOrDefault("PORT", "8080"),
-		SSEThreshold:     getEnvInt("SSE_THRESHOLD", 200),
-		DefaultAdmitRate: getEnvInt64("DEFAULT_ADMIT_RATE", 60),
-		QueuePageURL:     getEnvOrDefault("QUEUE_PAGE_URL", "http://localhost:8082/queue/"),
-		EventsBucketName: getEnvOrDefault("EVENTS_BUCKET_NAME", ""),
-		EventsCFDomain:   getEnvOrDefault("EVENTS_CF_DOMAIN", ""),
+		RedisAddr:           getEnvOrDefault("REDIS_ADDR", "redis-queue:6379"),
+		Port:                getEnvOrDefault("PORT", "8080"),
+		SSEThreshold:        getEnvInt("SSE_THRESHOLD", 200),
+		DefaultAdmitRate:    getEnvInt64("DEFAULT_ADMIT_RATE", 60),
+		QueuePageURL:        getEnvOrDefault("QUEUE_PAGE_URL", "http://localhost:8082/queue/"),
+		QueuePageBucketName: getEnvOrDefault("QUEUE_PAGE_BUCKET_NAME", ""),
 	}
 }
 
