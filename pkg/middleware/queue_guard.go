@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"time"
 
+	"github.com/adityabansal29/virtual-queue/internal/config"
 	"github.com/adityabansal29/virtual-queue/internal/token"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -56,7 +56,7 @@ func QueueGuard(cfg Config) gin.HandlerFunc {
 		}
 
 		// 4. SETNX — one-time enforcement (TOKEN-04).
-		set, err := cfg.RDB.SetNX(c.Request.Context(), "token:"+claims.ID, "used", 30*time.Minute).Result()
+		set, err := cfg.RDB.SetNX(c.Request.Context(), "token:"+claims.ID, "used", config.AdmissionUsedTTL).Result()
 		if err != nil || !set {
 			c.AbortWithStatus(http.StatusForbidden)
 			return
@@ -64,7 +64,7 @@ func QueueGuard(cfg Config) gin.HandlerFunc {
 
 		// 5. Issue q_session, clear q_admission, store claims for this request.
 		sc, _ := token.IssueSession(claims.Subject, claims.EventID, cfg.SessionSecret)
-		c.SetCookie("q_session", sc, 1800, "/", "", cfg.Secure, true)
+		c.SetCookie("q_session", sc, config.QSessionCookieMaxAge, "/", "", cfg.Secure, true)
 		c.SetCookie("q_admission", "", -1, "/", "", cfg.Secure, true)
 		// Cookie is set on the response; handler reads from gin context on this request.
 		if sessionClaims, err := token.ValidateSession(sc, cfg.SessionSecret); err == nil {

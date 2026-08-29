@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
 
 	"github.com/adityabansal29/virtual-queue/internal/config"
 	"github.com/adityabansal29/virtual-queue/internal/store"
@@ -14,7 +13,7 @@ import (
 )
 
 func main() {
-	cfg := config.Load()
+	cfg := config.LoadStubOrigin()
 
 	slog.Info("stub origin starting",
 		"port", "8081",
@@ -25,17 +24,12 @@ func main() {
 
 	originRedis := store.NewQueueRedis(cfg.RedisAddr)
 
-	eventID := os.Getenv("EVENT_ID")
-	if eventID == "" {
-		eventID = "evt-001"
-	}
-
 	mwCfg := middleware.Config{
 		AdmissionSecret: cfg.AdmissionSecret,
 		SessionSecret:   cfg.SessionSecret,
-		QueueJoinURL:    "http://localhost:8080/queue/join",
-		EventID:         eventID,
-		Secure:          false, // HTTP in local dev; set true behind HTTPS in production
+		QueueJoinURL:    cfg.QueueJoinURL,
+		EventID:         cfg.EventID,
+		Secure:          cfg.Secure,
 		RDB:             originRedis,
 	}
 

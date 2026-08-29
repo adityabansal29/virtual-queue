@@ -3,48 +3,114 @@ package config
 import (
 	"os"
 	"strconv"
+	"time"
 )
 
-// Config holds all runtime configuration for the queue server.
-type Config struct {
-	RedisAddr         string
-	Port              string
-	AdmissionSecret   string
-	SessionSecret     string
-	SSEThreshold      int
-	DefaultAdmitRate  int64
-	QueuePageURL      string // where browser lands after joining: ?ticket=...&target=...
-	SchedulerTickSecs int    // scheduler tick interval in seconds
+// ---------------------------------------------------------------------------
+// TTL constants — single source of truth for all Redis key and cookie lifetimes.
+// ---------------------------------------------------------------------------
+
+const (
+	// Redis key TTLs
+	TicketKeyTTL    = 2 * time.Hour    // ticket:{ticketID} hash — expires if never admitted
+	AdmissionUsedTTL = 30 * time.Minute // token:{jti} one-time SETNX (TOKEN-04)
+	SchedulerLockTTL = 10 * time.Second // scheduler:lock:{eventID} leader lock
+
+	// JWT lifetimes
+	AdmissionJWTTTL = 30 * time.Minute
+	SessionJWTTTL   = 30 * time.Minute
+
+	// Cookie max-age in seconds (as required by http.SetCookie / gin.SetCookie).
+	// queue.js uses QAdmissionCookieMaxAge value (1800) as a literal string.
+	QTicketCookieMaxAge    = 3600 // q_ticket:    1 hour
+	QAdmissionCookieMaxAge = 1800 // q_admission: 30 minutes
+	QSessionCookieMaxAge   = 1800 // q_session:   30 minutes
+)
+
+// ---------------------------------------------------------------------------
+// Per-service config types
+// ---------------------------------------------------------------------------
+
+// QueueServerConfig holds config for the HTTP queue API server.
+// No secrets: the queue server does not sign or verify any tokens.
+type QueueServerConfig struct {
+	RedisAddr        string
+	Port             string
+	SSEThreshold     int
+	DefaultAdmitRate int64
+	QueuePageURL     string
 }
 
-// Load reads configuration from environment variables.
-// Panics at startup if ADMISSION_SECRET or SESSION_SECRET are missing or identical.
-// ponytail: os.Getenv is sufficient; no dotenv library needed for Phase 1.
-func Load() Config {
-	cfg := Config{
+// SchedulerConfig holds config for the admission scheduler process.
+type SchedulerConfig struct {
+	RedisAddr        string
+	AdmissionSecret  string
+	DefaultAdmitRate int64
+	TickSecs         int
+}
+
+// StubOriginConfig holds config for the stub checkout origin.
+type StubOriginConfig struct {
+	RedisAddr       string
+	AdmissionSecret string
+	SessionSecret   string
+	EventID         string
+	QueueJoinURL    string
+	Secure          bool
+}
+
+// ---------------------------------------------------------------------------
+// Load functions
+// ---------------------------------------------------------------------------
+
+func LoadQueueServer() QueueServerConfig {
+	return QueueServerConfig{
 		RedisAddr:        getEnvOrDefault("REDIS_ADDR", "redis-queue:6379"),
 		Port:             getEnvOrDefault("PORT", "8080"),
-		AdmissionSecret:  os.Getenv("ADMISSION_SECRET"),
-		SessionSecret:    os.Getenv("SESSION_SECRET"),
 		SSEThreshold:     getEnvInt("SSE_THRESHOLD", 200),
-		DefaultAdmitRate:  getEnvInt64("DEFAULT_ADMIT_RATE", 60),
-		QueuePageURL:      getEnvOrDefault("QUEUE_PAGE_URL", "http://localhost:8082/queue/"),
-		SchedulerTickSecs: getEnvInt("SCHEDULER_TICK_SECS", 1),
+		DefaultAdmitRate: getEnvInt64("DEFAULT_ADMIT_RATE", 60),
+		QueuePageURL:     getEnvOrDefault("QUEUE_PAGE_URL", "http://localhost:8082/queue/"),
 	}
+}
 
-	// T-01-03 + TOKEN-02: secrets must be non-empty and distinct.
-	if cfg.AdmissionSecret == "" {
+func LoadScheduler() SchedulerConfig {
+	secret := os.Getenv("ADMISSION_SECRET")
+	if secret == "" {
 		panic("ADMISSION_SECRET must be set and non-empty")
 	}
-	if cfg.SessionSecret == "" {
+	return SchedulerConfig{
+		RedisAddr:        getEnvOrDefault("REDIS_ADDR", "redis-queue:6379"),
+		AdmissionSecret:  secret,
+		DefaultAdmitRate: getEnvInt64("DEFAULT_ADMIT_RATE", 60),
+		TickSecs:         getEnvInt("SCHEDULER_TICK_SECS", 1),
+	}
+}
+
+func LoadStubOrigin() StubOriginConfig {
+	admissionSecret := os.Getenv("ADMISSION_SECRET")
+	if admissionSecret == "" {
+		panic("ADMISSION_SECRET must be set and non-empty")
+	}
+	sessionSecret := os.Getenv("SESSION_SECRET")
+	if sessionSecret == "" {
 		panic("SESSION_SECRET must be set and non-empty")
 	}
-	if cfg.AdmissionSecret == cfg.SessionSecret {
+	if admissionSecret == sessionSecret {
 		panic("ADMISSION_SECRET and SESSION_SECRET must be different values")
 	}
-
-	return cfg
+	return StubOriginConfig{
+		RedisAddr:       getEnvOrDefault("REDIS_ADDR", "redis-origin:6379"),
+		AdmissionSecret: admissionSecret,
+		SessionSecret:   sessionSecret,
+		EventID:         getEnvOrDefault("EVENT_ID", "evt-001"),
+		QueueJoinURL:    getEnvOrDefault("QUEUE_JOIN_URL", "http://localhost:8080/queue/join"),
+		Secure:          getEnvBool("SECURE", false),
+	}
 }
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 func getEnvOrDefault(key, def string) string {
 	if v := os.Getenv(key); v != "" {
@@ -69,4 +135,16 @@ func getEnvInt64(key string, def int64) int64 {
 		}
 	}
 	return def
+}
+
+func getEnvBool(key string, def bool) bool {
+	v := os.Getenv(key)
+	if v == "" {
+		return def
+	}
+	b, err := strconv.ParseBool(v)
+	if err != nil {
+		return def
+	}
+	return b
 }

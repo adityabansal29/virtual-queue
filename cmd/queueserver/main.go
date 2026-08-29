@@ -12,13 +12,11 @@ import (
 )
 
 func main() {
-	cfg := config.Load()
+	cfg := config.LoadQueueServer()
 
 	slog.Info("queue server starting",
 		"port", cfg.Port,
 		"redis", cfg.RedisAddr,
-		"admission_secret", "set",
-		"session_secret", "set",
 	)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)

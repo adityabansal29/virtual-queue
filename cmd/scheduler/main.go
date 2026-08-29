@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	cfg := config.Load()
+	cfg := config.LoadScheduler()
 
 	slog.Info("scheduler starting",
 		"redis", cfg.RedisAddr,

@@ -6,6 +6,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+
+	"github.com/adityabansal29/virtual-queue/internal/config"
 )
 
 // SessionClaims are the JWT claims for a q_session cookie.
@@ -26,7 +28,7 @@ func IssueSession(ticketID, eventID, secret string) (string, error) {
 			ID:        uuid.New().String(),
 			Subject:   ticketID,
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(30 * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(config.SessionJWTTTL)),
 		},
 	}
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(secret))

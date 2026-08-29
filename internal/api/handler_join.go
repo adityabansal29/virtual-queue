@@ -18,12 +18,12 @@ import (
 
 // Handler holds shared dependencies for all HTTP handlers.
 type Handler struct {
-	cfg config.Config
+	cfg config.QueueServerConfig
 	rdb *redis.Client
 }
 
 // NewHandler creates a Handler with the given config and Redis client.
-func NewHandler(cfg config.Config, rdb *redis.Client) *Handler {
+func NewHandler(cfg config.QueueServerConfig, rdb *redis.Client) *Handler {
 	return &Handler{cfg: cfg, rdb: rdb}
 }
 
@@ -48,7 +48,7 @@ func (h *Handler) Join(c *gin.Context) {
 			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "queue unavailable"})
 			return
 		}
-		c.SetCookie("q_ticket", ticketID, 3600, "/", "", false, true)
+		c.SetCookie("q_ticket", ticketID, config.QTicketCookieMaxAge, "/", "", false, true)
 	}
 
 	dest := fmt.Sprintf("%s?ticket=%s&target=%s",
@@ -83,6 +83,7 @@ func (h *Handler) createTicket(ctx context.Context, eventID string) (string, err
 		"eventId", eventID,
 		"joinTime", score,
 	) //nolint:errcheck
+	h.rdb.Expire(ctx, store.TicketKey(ticketID), config.TicketKeyTTL) //nolint:errcheck
 
 	return ticketID, nil
 }

@@ -2,10 +2,10 @@ package scheduler
 
 import (
 	"context"
-	"time"
 
 	"github.com/redis/go-redis/v9"
 
+	"github.com/adityabansal29/virtual-queue/internal/config"
 	"github.com/adityabansal29/virtual-queue/internal/store"
 )
 
@@ -13,7 +13,7 @@ import (
 // Returns (true, nil) if acquired, (false, nil) if already held, (false, err) on Redis failure.
 // ponytail: per-event lock is a failsafe for restart-overlap races — cheap when only one instance runs.
 func AcquireLock(ctx context.Context, rdb *redis.Client, eventID string) (bool, error) {
-	return rdb.SetNX(ctx, store.SchedulerLockKey(eventID), "1", 10*time.Second).Result()
+	return rdb.SetNX(ctx, store.SchedulerLockKey(eventID), "1", config.SchedulerLockTTL).Result()
 }
 
 // ReleaseLock releases the distributed leader lock for eventID.
