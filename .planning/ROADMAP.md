@@ -95,7 +95,7 @@ Plans:
 
 - [x] 03-02-PLAN.md — [Wave 2, parallel] ECS Fargate + ElastiCache Redis + DynamoDB + SQS modules; SSM secrets wiring
 - [x] 03-06-PLAN.md — [Wave 2, parallel] ECS Fargate compute and queueserver autoscaling
-- [ ] 03-03-PLAN.md — [Wave 2, parallel] Go internal/aws package (DynamoWriter + SQSEmitter); scheduler injection; GitHub Actions CI/CD
+- [x] 03-03-PLAN.md — [Wave 2, parallel] Go internal/aws package (DynamoWriter + SQSEmitter); scheduler injection; GitHub Actions CI/CD
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
