@@ -50,3 +50,5 @@ scheduler
 
 # Playwright MCP artifacts
 .playwright-mcp/
+# Added by code-review-graph
+.code-review-graph/
