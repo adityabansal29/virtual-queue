@@ -99,7 +99,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 03-04-PLAN.md — [Wave 3, parallel] S3 + CloudFront static queue page; SameSite=Lax fix; per-event custom HTML upload/redirect
+- [x] 03-04-PLAN.md — [Wave 3, parallel] S3 + CloudFront static queue page; SameSite=Lax fix; per-event custom HTML upload/redirect
 - [ ] 03-05-PLAN.md — [Wave 3, parallel] CloudFront Function edge JWT enforcement; CloudFront KVS; stub origin ALB lock-down
 
 ## Progress
