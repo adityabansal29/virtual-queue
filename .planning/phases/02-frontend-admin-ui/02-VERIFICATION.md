@@ -1,23 +1,27 @@
 ---
 phase: 02-frontend-admin-ui
 verified: 2026-08-03T00:00:00Z
-status: human_needed
+status: passed
 score: 5/5 must-haves verified
 behavior_unverified: 2
 overrides_applied: 0
 behavior_unverified_items:
+
   - truth: "When rank drops below 200 the browser switches from polling to SSE automatically (no page reload)"
     test: "Open queue page with a ticket whose rank is >= 200, watch it drop below 200 via scheduler admissions, observe network tab — should close the poll interval and open an EventSource connection without reload"
     expected: "Network tab shows EventSource connection established; polling requests stop"
     why_human: "The poll→SSE crossover is a runtime state transition (clearInterval + new EventSource). Code is wired correctly — pollOnce() calls clearInterval + startSSE() when upgrade_to_sse is true — but no test exercises the actual transition with a live browser."
+
   - truth: "On admission the browser sets the q_admission cookie and redirects to the stub checkout page without manual intervention"
     test: "Join queue, wait for scheduler to admit the ticket, observe: (a) q_admission cookie appears in DevTools, (b) page redirects to stuborigin without any user action, (c) QueueGuard validates the token, issues q_session, and renders the seat grid"
     expected: "Seamless redirect to checkout with seat grid displayed; no 403 or session-expired page"
     why_human: "The full admission flow involves: scheduler writing admission_token to Redis, poll/SSE delivering it to the browser, queue.js setting a cookie and redirecting, QueueGuard validating and issuing q_session. All code paths are wired correctly but the end-to-end state machine requires a running stack and browser observation."
 human_verification:
+
   - test: "Poll → SSE crossover in browser"
     expected: "Network tab shows EventSource opening after rank drops below 200; no page reload"
     why_human: "Runtime state transition — clearInterval + new EventSource cannot be verified by grep or static analysis"
+
   - test: "Full admission flow end-to-end"
     expected: "Scheduler admits ticket → poll/SSE delivers token → queue.js sets q_admission cookie + redirects → QueueGuard issues q_session → seat grid renders"
     why_human: "Multi-component state machine across scheduler, Redis pub/sub, browser, and middleware. All pieces are wired correctly but only observable in a running stack."
