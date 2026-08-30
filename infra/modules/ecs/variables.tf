@@ -88,6 +88,11 @@ variable "ssm_event_id_arn" {
   default = ""
 }
 
+variable "ssm_scheduler_tick_secs_arn" {
+  type    = string
+  default = ""
+}
+
 variable "dynamodb_sessions_table_arn" {
   type    = string
   default = ""

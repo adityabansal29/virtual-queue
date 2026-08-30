@@ -23,6 +23,7 @@ resource "aws_iam_role" "ecs_task_execution" {
           var.ssm_default_admit_rate_arn,
           var.ssm_sse_threshold_arn,
           var.ssm_event_id_arn,
+          var.ssm_scheduler_tick_secs_arn,
         ]
       }]
     })
@@ -114,7 +115,8 @@ resource "aws_ecs_task_definition" "scheduler" {
     ]
     secrets = [
       { name = "ADMISSION_SECRET", valueFrom = var.ssm_admission_secret_arn },
-      { name = "DEFAULT_ADMIT_RATE", valueFrom = var.ssm_default_admit_rate_arn }
+      { name = "DEFAULT_ADMIT_RATE", valueFrom = var.ssm_default_admit_rate_arn },
+      { name = "SCHEDULER_TICK_SECS", valueFrom = var.ssm_scheduler_tick_secs_arn }
     ]
     logConfiguration = { logDriver = "awslogs", options = merge(local.log_options, { "awslogs-group" = aws_cloudwatch_log_group.scheduler.name }) }
   }])

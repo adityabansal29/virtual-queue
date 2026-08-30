@@ -34,6 +34,7 @@ module "ecs" {
   ssm_default_admit_rate_arn   = aws_ssm_parameter.default_admit_rate.arn
   ssm_sse_threshold_arn        = aws_ssm_parameter.sse_threshold.arn
   ssm_event_id_arn             = aws_ssm_parameter.event_id.arn
+  ssm_scheduler_tick_secs_arn  = aws_ssm_parameter.scheduler_tick_secs.arn
   dynamodb_sessions_table_arn  = module.dynamodb.queue_sessions_table_arn
   dynamodb_events_table_arn    = module.dynamodb.queue_events_table_arn
   dynamodb_audit_log_table_arn = module.dynamodb.queue_audit_log_table_arn
@@ -80,7 +81,7 @@ data "aws_ssm_parameter" "session_secret" {
 resource "aws_ssm_parameter" "default_admit_rate" {
   name  = "/virtual-queue/${var.environment}/DEFAULT_ADMIT_RATE"
   type  = "String"
-  value = "3"
+  value = "1"
 }
 
 resource "aws_ssm_parameter" "sse_threshold" {
@@ -93,6 +94,12 @@ resource "aws_ssm_parameter" "event_id" {
   name  = "/virtual-queue/${var.environment}/EVENT_ID"
   type  = "String"
   value = "evt-001"
+}
+
+resource "aws_ssm_parameter" "scheduler_tick_secs" {
+  name  = "/virtual-queue/${var.environment}/SCHEDULER_TICK_SECS"
+  type  = "String"
+  value = "20"
 }
 
 module "s3" {
