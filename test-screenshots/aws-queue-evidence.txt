@@ -1,0 +1,37 @@
+AWS validation run: evidence-20260830085014
+Selected because this run completed the queue flow without browser network-change errors.
+
+== JavaScript flow ==
+request poll
+response 200 poll
+request sse
+response 200 sse
+Polling UI: 20 people ahead / ~1 min
+SSE UI: 20 people ahead / ~1 min
+
+== QueueServer CloudWatch: /ecs/dev/queueserver ==
+08:50:28  GET /queue/join?eventId=evidence-20260830085014  -> 302
+08:50:29  GET /queue/status/{ticketId}?mode=poll              -> 200
+08:50:32  GET /queue/status/{ticketId}?mode=sse               -> 200
+
+== Scheduler CloudWatch: /ecs/dev/scheduler ==
+Admission 01 | 08:50:33 | rank after admission: 19 | eventId=evidence-20260830085014
+Admission 02 | 08:50:53 | rank after admission: 18 | eventId=evidence-20260830085014
+Admission 03 | 08:51:13 | rank after admission: 17 | eventId=evidence-20260830085014
+Admission 04 | 08:51:33 | rank after admission: 16 | eventId=evidence-20260830085014
+Admission 05 | 08:51:53 | rank after admission: 15 | eventId=evidence-20260830085014
+Admission 06 | 08:52:13 | rank after admission: 14 | eventId=evidence-20260830085014
+Admission 07 | 08:52:33 | rank after admission: 13 | eventId=evidence-20260830085014
+Admission 08 | 08:52:53 | rank after admission: 12 | eventId=evidence-20260830085014
+Admission 09 | 08:53:13 | rank after admission: 11 | eventId=evidence-20260830085014
+Admission 10 | 08:53:33 | rank after admission: 10 | eventId=evidence-20260830085014
+Admission 11 | 08:53:53 | rank after admission: 9  | eventId=evidence-20260830085014
+Admission 12 | 08:54:13 | rank after admission: 8  | eventId=evidence-20260830085014
+Admission 13 | 08:54:33 | rank after admission: 7  | eventId=evidence-20260830085014
+Admission 14 | 08:54:53 | rank after admission: 6  | eventId=evidence-20260830085014
+Admission 15 | 08:55:13 | rank after admission: 5  | eventId=evidence-20260830085014
+Admission 16 | 08:55:33 | rank after admission: 4  | eventId=evidence-20260830085014
+Admission 17 | 08:55:53 | rank after admission: 3  | eventId=evidence-20260830085014
+Admission 18 | 08:56:13 | rank after admission: 2  | eventId=evidence-20260830085014
+Admission 19 | 08:56:33 | rank after admission: 1  | eventId=evidence-20260830085014
+Admission 20 | 08:56:53 | rank after admission: 0  | eventId=evidence-20260830085014

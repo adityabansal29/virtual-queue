@@ -1,0 +1,15 @@
+AWS validation run: evidence-20260830085014
+
+JavaScript network flow:
+1. 08:50:29.491 request  poll
+2. 08:50:29.989 response 200 poll
+3. 08:50:29.991 request  sse
+4. 08:50:30.221 response 200 sse
+
+JavaScript console:
+- No page errors.
+- One browser resource warning: HTTP 403 (non-blocking static resource).
+
+UI captured:
+- Polling state: 20 people ahead / ~1 min
+- SSE state: 20 people ahead / ~1 min
