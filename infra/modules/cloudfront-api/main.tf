@@ -3,7 +3,7 @@ resource "aws_cloudfront_distribution" "api" {
   price_class = "PriceClass_100"
 
   origin {
-    domain_name = var.alb_dns
+    domain_name = var.queue_alb_dns
     origin_id   = "alb-queue-api"
     custom_origin_config {
       http_port              = 80

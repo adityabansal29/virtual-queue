@@ -89,10 +89,10 @@ module "cloudfront" {
 }
 
 module "cloudfront_api" {
-  source      = "../../modules/cloudfront-api"
-  environment = var.environment
-  alb_dns     = module.ecs.alb_queue_api_dns
-  depends_on  = [module.ecs]
+  source        = "../../modules/cloudfront-api"
+  environment   = var.environment
+  queue_alb_dns = module.ecs.alb_queue_api_dns
+  depends_on    = [module.ecs]
 }
 
 resource "aws_s3_object" "queue_index" {

@@ -3,6 +3,6 @@ variable "environment" {
   default = "dev"
 }
 
-variable "alb_dns" {
+variable "queue_alb_dns" {
   type = string
 }
