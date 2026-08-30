@@ -16,6 +16,7 @@ type AdmissionEvent struct {
 	JTI      string `json:"jti"`
 }
 
+// SQSEmitter publishes admission events to the FIFO queue.
 type SQSEmitter struct {
 	client   *sqs.Client
 	queueURL string

@@ -18,6 +18,7 @@ type SessionRecord struct {
 	AdmittedAt time.Time
 }
 
+// DynamoWriter writes admitted-session records to DynamoDB.
 type DynamoWriter struct {
 	client    *dynamodb.Client
 	tableName string
