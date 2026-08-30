@@ -101,3 +101,17 @@ resource "aws_s3_object" "queue_index" {
   content      = replace(file("${path.root}/../../../web/queue/index.html"), "__QUEUE_API_BASE__", "https://${module.cloudfront_api.queue_api_cf_domain}")
   content_type = "text/html"
 }
+
+resource "aws_s3_object" "queue_js" {
+  bucket       = module.s3.queue_page_bucket_id
+  key          = "queue/queue.js"
+  source       = "${path.root}/../../../web/queue/queue.js"
+  content_type = "application/javascript"
+}
+
+resource "aws_s3_object" "queue_css" {
+  bucket       = module.s3.queue_page_bucket_id
+  key          = "queue/queue.css"
+  source       = "${path.root}/../../../web/queue/queue.css"
+  content_type = "text/css"
+}
