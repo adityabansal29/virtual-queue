@@ -80,7 +80,7 @@ module "s3" {
 }
 
 module "cloudfront" {
-  source                                 = "../../modules/cloudfront"
+  source                                 = "../../modules/cloudfront/static"
   environment                            = var.environment
   queue_page_bucket_id                   = module.s3.queue_page_bucket_id
   queue_page_bucket_arn                  = module.s3.queue_page_bucket_arn
@@ -89,7 +89,7 @@ module "cloudfront" {
 }
 
 module "cloudfront_api" {
-  source        = "../../modules/cloudfront-api"
+  source        = "../../modules/cloudfront/queue-api"
   environment   = var.environment
   queue_alb_dns = module.ecs.alb_queue_api_dns
   depends_on    = [module.ecs]
@@ -98,6 +98,6 @@ module "cloudfront_api" {
 resource "aws_s3_object" "queue_index" {
   bucket       = module.s3.queue_page_bucket_id
   key          = "queue/index.html"
-  content      = replace(file("${path.root}/../../../web/queue/index.html"), "__QUEUE_API_BASE__", "https://${module.cloudfront_api.api_cf_domain}")
+  content      = replace(file("${path.root}/../../../web/queue/index.html"), "__QUEUE_API_BASE__", "https://${module.cloudfront_api.queue_api_cf_domain}")
   content_type = "text/html"
 }

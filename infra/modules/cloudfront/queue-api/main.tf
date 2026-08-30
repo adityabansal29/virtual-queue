@@ -1,10 +1,11 @@
-resource "aws_cloudfront_distribution" "api" {
+resource "aws_cloudfront_distribution" "queue_api" {
   enabled     = true
   price_class = "PriceClass_100"
 
   origin {
     domain_name = var.queue_alb_dns
     origin_id   = "alb-queue-api"
+
     custom_origin_config {
       http_port              = 80
       https_port             = 443
@@ -27,5 +28,8 @@ resource "aws_cloudfront_distribution" "api" {
       restriction_type = "none"
     }
   }
-  viewer_certificate { cloudfront_default_certificate = true }
+
+  viewer_certificate {
+    cloudfront_default_certificate = true
+  }
 }
