@@ -17,7 +17,6 @@ type Config struct {
 	AdmissionSecret string
 	SessionSecret   string
 	QueueJoinURL    string // GET /queue/join endpoint — linked from the error page
-	EventID         string // event this origin belongs to
 	Secure          bool   // true in production (HTTPS), false for local HTTP dev
 	RDB             *redis.Client
 }
@@ -27,7 +26,8 @@ type Config struct {
 // Fast path:   valid q_session → pass through.
 // Admission:   valid q_admission → SETNX (TOKEN-04) → issue q_session → pass through.
 // No cookie:   return 401 error page with a manual "Join the queue" link.
-//              No auto-redirect — avoids origin→EW dependency and infinite-loop risk.
+//
+//	No auto-redirect — avoids origin→EW dependency and infinite-loop risk.
 func QueueGuard(cfg Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 1. Session fast-path.
@@ -42,7 +42,7 @@ func QueueGuard(cfg Config) gin.HandlerFunc {
 		// 2. Admission token required.
 		ac, err := c.Cookie("q_admission")
 		if err != nil {
-			c.Data(http.StatusUnauthorized, "text/html; charset=utf-8", []byte(queueErrorPage(cfg, c.Request.URL.String())))
+			c.Data(http.StatusUnauthorized, "text/html; charset=utf-8", []byte(queueErrorPage(cfg, c.Request.URL.String(), c.Query("eventId"))))
 			c.Abort()
 			return
 		}
@@ -50,7 +50,7 @@ func QueueGuard(cfg Config) gin.HandlerFunc {
 		// 3. Verify JWT.
 		claims, err := token.ValidateJWT(ac, cfg.AdmissionSecret)
 		if err != nil {
-			c.Data(http.StatusUnauthorized, "text/html; charset=utf-8", []byte(queueErrorPage(cfg, c.Request.URL.String())))
+			c.Data(http.StatusUnauthorized, "text/html; charset=utf-8", []byte(queueErrorPage(cfg, c.Request.URL.String(), c.Query("eventId"))))
 			c.Abort()
 			return
 		}
@@ -75,9 +75,9 @@ func QueueGuard(cfg Config) gin.HandlerFunc {
 	}
 }
 
-func queueErrorPage(cfg Config, requestURL string) string {
+func queueErrorPage(cfg Config, requestURL, eventID string) string {
 	joinLink := fmt.Sprintf("%s?eventId=%s&target=%s",
-		cfg.QueueJoinURL, url.QueryEscape(cfg.EventID), url.QueryEscape(requestURL))
+		cfg.QueueJoinURL, url.QueryEscape(eventID), url.QueryEscape(requestURL))
 	return fmt.Sprintf(`<!DOCTYPE html>
 <html lang="en">
 <head>

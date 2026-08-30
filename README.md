@@ -8,7 +8,7 @@ Validated on 2026-08-30 against the deployed CloudFront endpoints:
 - Queue page: `https://d3ef9uo0iwz4l3.cloudfront.net/queue/index.html`
 - Queue API: `https://d20ahx254u6i0j.cloudfront.net`
 - ECS services: `dev-queueserver:3`, `dev-scheduler:3`, `dev-stuborigin:2`
-- SSM business configuration: `EVENT_ID=evt-001`, `DEFAULT_ADMIT_RATE=1`, `SSE_THRESHOLD=200`, `SCHEDULER_TICK_SECS=20`
+- SSM business configuration: `DEFAULT_ADMIT_RATE=1`, `SSE_THRESHOLD=200`, `SCHEDULER_TICK_SECS=20`
 
 Flow evidence:
 

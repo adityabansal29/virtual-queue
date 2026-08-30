@@ -83,11 +83,6 @@ variable "ssm_sse_threshold_arn" {
   default = ""
 }
 
-variable "ssm_event_id_arn" {
-  type    = string
-  default = ""
-}
-
 variable "ssm_scheduler_tick_secs_arn" {
   type    = string
   default = ""
@@ -131,11 +126,6 @@ variable "queue_page_url" {
 variable "queue_join_url" {
   type    = string
   default = ""
-}
-
-variable "event_id" {
-  type    = string
-  default = "evt-001"
 }
 
 variable "queue_page_bucket_name" {

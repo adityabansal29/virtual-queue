@@ -28,7 +28,6 @@ func main() {
 		AdmissionSecret: cfg.AdmissionSecret,
 		SessionSecret:   cfg.SessionSecret,
 		QueueJoinURL:    cfg.QueueJoinURL,
-		EventID:         cfg.EventID,
 		Secure:          cfg.Secure,
 		RDB:             originRedis,
 	}

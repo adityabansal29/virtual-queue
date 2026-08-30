@@ -33,7 +33,6 @@ module "ecs" {
   ssm_session_secret_arn       = data.aws_ssm_parameter.session_secret.arn
   ssm_default_admit_rate_arn   = aws_ssm_parameter.default_admit_rate.arn
   ssm_sse_threshold_arn        = aws_ssm_parameter.sse_threshold.arn
-  ssm_event_id_arn             = aws_ssm_parameter.event_id.arn
   ssm_scheduler_tick_secs_arn  = aws_ssm_parameter.scheduler_tick_secs.arn
   dynamodb_sessions_table_arn  = module.dynamodb.queue_sessions_table_arn
   dynamodb_events_table_arn    = module.dynamodb.queue_events_table_arn
@@ -90,12 +89,6 @@ resource "aws_ssm_parameter" "sse_threshold" {
   value = "200"
 }
 
-resource "aws_ssm_parameter" "event_id" {
-  name  = "/virtual-queue/${var.environment}/EVENT_ID"
-  type  = "String"
-  value = "evt-001"
-}
-
 resource "aws_ssm_parameter" "scheduler_tick_secs" {
   name  = "/virtual-queue/${var.environment}/SCHEDULER_TICK_SECS"
   type  = "String"
@@ -121,6 +114,14 @@ module "cloudfront_api" {
   environment   = var.environment
   queue_alb_dns = module.ecs.alb_queue_api_dns
   depends_on    = [module.ecs]
+}
+
+module "cloudfront_stub_origin" {
+  source              = "../../modules/cloudfront/stub-origin"
+  environment         = var.environment
+  stub_origin_alb_dns = module.ecs.alb_stub_origin_dns
+  queue_join_host     = module.cloudfront_api.queue_api_cf_domain
+  depends_on          = [module.ecs, module.cloudfront_api]
 }
 
 resource "aws_s3_object" "queue_index" {

@@ -55,7 +55,6 @@ type StubOriginConfig struct {
 	RedisAddr       string
 	AdmissionSecret string
 	SessionSecret   string
-	EventID         string
 	QueueJoinURL    string
 	Secure          bool
 }
@@ -104,7 +103,6 @@ func LoadStubOrigin() StubOriginConfig {
 		RedisAddr:       getEnvOrDefault("REDIS_ADDR", "redis-origin:6379"),
 		AdmissionSecret: admissionSecret,
 		SessionSecret:   sessionSecret,
-		EventID:         getEnvOrDefault("EVENT_ID", "evt-001"),
 		QueueJoinURL:    getEnvOrDefault("QUEUE_JOIN_URL", "http://localhost:8080/queue/join"),
 		Secure:          getEnvBool("SECURE", false),
 	}

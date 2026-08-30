@@ -58,6 +58,7 @@ func (h *Handler) Join(c *gin.Context) {
 		}
 		c.SetCookie("q_ticket", ticketID, config.QTicketCookieMaxAge, "/", "", false, true)
 	}
+	target = targetWithEventID(target, eventID)
 
 	if h.s3Client != nil && h.cfg.QueuePageBucketName != "" {
 		key := fmt.Sprintf("events/%s/page.html", eventID)
@@ -73,6 +74,22 @@ func (h *Handler) Join(c *gin.Context) {
 	dest := fmt.Sprintf("%s?ticket=%s&target=%s",
 		h.cfg.QueuePageURL, ticketID, url.QueryEscape(target))
 	c.Redirect(http.StatusFound, dest)
+}
+
+// targetWithEventID carries event context through the waiting-page redirect so
+// the stub-origin edge function can enforce the correct queue after admission.
+func targetWithEventID(rawTarget, eventID string) string {
+	if rawTarget == "" {
+		return rawTarget
+	}
+	target, err := url.Parse(rawTarget)
+	if err != nil {
+		return rawTarget
+	}
+	query := target.Query()
+	query.Set("eventId", eventID)
+	target.RawQuery = query.Encode()
+	return target.String()
 }
 
 // doesTicketExist reports whether ticketID still has a rank in the queue for this event.

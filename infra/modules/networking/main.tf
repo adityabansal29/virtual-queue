@@ -143,7 +143,7 @@ resource "aws_security_group" "alb_stub_origin" {
     from_port       = 80
     to_port         = 80
     protocol        = "tcp"
-    security_groups = [aws_security_group.alb_public.id]
+    prefix_list_ids = [data.aws_ec2_managed_prefix_list.cloudfront.id]
   }
   egress {
     from_port   = 0
@@ -152,4 +152,8 @@ resource "aws_security_group" "alb_stub_origin" {
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = { Environment = var.environment }
+}
+
+data "aws_ec2_managed_prefix_list" "cloudfront" {
+  name = "com.amazonaws.global.cloudfront.origin-facing"
 }

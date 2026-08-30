@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Queue Core & Local Stack** - Go queue API, Redis sorted-set queue, admission scheduler, two-cookie token model, and Docker Compose local dev environment (completed 2026-08-02)
 - [x] **Phase 2: Frontend & Admin UI** - Static queue waiting page with hybrid poll/SSE crossover, admin dashboard, and stub ticket checkout (completed 2026-08-29)
-- [ ] **Phase 3: AWS Infrastructure** - ECS Fargate, ElastiCache Redis, S3/CloudFront, DynamoDB, and SQS FIFO deployment
+- [x] **Phase 3: AWS Infrastructure** - ECS Fargate, ElastiCache Redis, S3/CloudFront, DynamoDB, and SQS FIFO deployment (completed 2026-08-30)
 
 ## Phase Details
 
@@ -89,7 +89,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 03-01-PLAN.md — [Wave 1, tracer] Terraform skeleton: remote backend, module structure, networking (VPC/subnets/SGs), ECR repos
+- [x] 03-01-PLAN.md — [Wave 1, tracer] Terraform skeleton: remote backend, module structure, networking (VPC/subnets/SGs), ECR repos
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -100,7 +100,7 @@ Plans:
 **Wave 3** *(blocked on Wave 2 completion)*
 
 - [x] 03-04-PLAN.md — [Wave 3, parallel] S3 + CloudFront static queue page; SameSite=Lax fix; per-event custom HTML upload/redirect
-- [ ] 03-05-PLAN.md — [Wave 3, parallel] CloudFront Function edge JWT enforcement; CloudFront KVS; stub origin ALB lock-down
+- [x] 03-05-PLAN.md — [Wave 3, parallel] CloudFront Function edge JWT enforcement; CloudFront KVS; stub origin ALB lock-down
 
 ## Progress
 
@@ -111,4 +111,4 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. Queue Core & Local Stack | 4/4 | Complete    | 2026-08-02 |
 | 2. Frontend & Admin UI | 3/3 | Complete    | 2026-08-29 |
-| 3. AWS Infrastructure | 0/TBD | Not started | - |
+| 3. AWS Infrastructure | 6/6 | Complete | 2026-08-30 |
