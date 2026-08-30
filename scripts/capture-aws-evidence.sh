@@ -4,11 +4,13 @@ set -euo pipefail
 
 API_BASE="${QUEUE_API_BASE:-https://d20ahx254u6i0j.cloudfront.net}"
 PAGE_BASE="${QUEUE_PAGE_BASE:-https://d3ef9uo0iwz4l3.cloudfront.net/queue/index.html}"
+TARGET_BASE="${QUEUE_TARGET_BASE:-https://d2y1qfg1p2ylf3.cloudfront.net/checkout}"
 EVENT_ID="${EVENT_ID:-evidence-$(date -u +%Y%m%d%H%M%S)}"
 COUNT="${QUEUE_SEED_COUNT:-20}"
 OUT_DIR="${EVIDENCE_DIR:-test-screenshots}"
 PROGRESS_INTERVAL_SECS="${PROGRESS_INTERVAL_SECS:-5}"
 PROGRESS_STOP_RANK="${PROGRESS_STOP_RANK:-0}"
+SCREENSHOT_RANKS="${SCREENSHOT_RANKS:-20,17,13,10,7,3,0}"
 mkdir -p "$OUT_DIR"
 CAPTURE_START_MS="$(( $(date +%s) * 1000 ))"
 
@@ -22,13 +24,14 @@ if ! NODE_PATH="$NODE_PATH_VALUE" node -e "require('playwright-core')" >/dev/nul
   NODE_PATH_VALUE="$PLAYWRIGHT_DIR/node_modules"
 fi
 
-export API_BASE PAGE_BASE EVENT_ID OUT_DIR PROGRESS_INTERVAL_SECS PROGRESS_STOP_RANK
+export API_BASE PAGE_BASE TARGET_BASE EVENT_ID OUT_DIR PROGRESS_INTERVAL_SECS PROGRESS_STOP_RANK SCREENSHOT_RANKS
 NODE_PATH="$NODE_PATH_VALUE" node <<'NODE'
 const fs = require('fs');
 const { chromium } = require('playwright-core');
 
 const api = process.env.API_BASE;
 const pageBase = process.env.PAGE_BASE;
+const targetBase = process.env.TARGET_BASE;
 const eventId = encodeURIComponent(process.env.EVENT_ID);
 const out = process.env.OUT_DIR;
 const chrome = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
@@ -51,39 +54,46 @@ const errors = [];
     if (res.status() >= 400) consoleLines.push(`[http ${res.status()}] ${url}`);
   });
 
-  const join = await page.goto(`${api}/queue/join?eventId=${eventId}&target=${encodeURIComponent(pageBase + '?complete=1')}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  const target = `${targetBase}?eventId=${eventId}`;
+  const join = await page.goto(`${api}/queue/join?eventId=${eventId}&target=${encodeURIComponent(target)}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   if (!join || join.status() !== 200) throw new Error(`join navigation failed: ${join && join.status()}`);
   await page.waitForFunction(() => document.querySelector('#pos')?.textContent?.includes('people ahead'), null, { timeout: 10000 });
   await page.screenshot({ path: `${out}/aws-queue-polling.png`, fullPage: true });
   const pollingText = await page.locator('body').innerText();
-  await page.waitForTimeout(1500);
-  await page.screenshot({ path: `${out}/aws-queue-sse.png`, fullPage: true });
-  const sseText = await page.locator('body').innerText();
   const progress = [];
   let lastRank = null;
   const interval = Number(process.env.PROGRESS_INTERVAL_SECS) * 1000;
   const stopRank = Number(process.env.PROGRESS_STOP_RANK);
-  for (;;) {
+  const screenshotRanks = new Set(process.env.SCREENSHOT_RANKS.split(',').map(Number));
+  const recordProgress = async () => {
     const text = await page.locator('#pos').innerText();
     const match = text.match(/^(\d+) people ahead$/);
-    if (!match) break;
+    if (!match) return null;
     const rank = Number(match[1]);
     if (rank !== lastRank) {
-      const filename = `${out}/aws-queue-progress-${rank}.png`;
-      await page.screenshot({ path: filename, fullPage: true });
-      progress.push(JSON.stringify({
-        iteration: progress.length + 1,
-        timestamp: new Date().toISOString(),
-        rank,
-        ui: text,
-        screenshot: filename,
-      }));
+      const filename = screenshotRanks.has(rank) ? `${out}/aws-queue-progress-${rank}.png` : null;
+      if (filename) await page.screenshot({ path: filename, fullPage: true });
+      progress.push(JSON.stringify({ iteration: progress.length + 1, timestamp: new Date().toISOString(), rank, ui: text, screenshot: filename || '<not captured>' }));
       lastRank = rank;
     }
+    return rank;
+  };
+  const sseRequest = page.waitForRequest(req => req.url().includes('/queue/status/') && new URL(req.url()).searchParams.get('mode') === 'sse', { timeout: 360000 });
+  for (;;) {
+    const reachedSSE = await Promise.race([sseRequest.then(() => true), page.waitForTimeout(interval).then(() => false)]);
+    if (reachedSSE) break;
+    await recordProgress();
+  }
+  await page.screenshot({ path: `${out}/aws-queue-sse.png`, fullPage: true });
+  const sseText = await page.locator('body').innerText();
+  for (;;) {
+    const rank = await recordProgress();
+    if (rank === null) break;
     if (rank <= stopRank) break;
     await page.waitForTimeout(interval);
   }
   const finalUrl = page.url();
+  await page.screenshot({ path: `${out}/aws-queue-checkout.png`, fullPage: true });
   await browser.close();
 
   fs.writeFileSync(`${out}/aws-queue-browser.log`, [

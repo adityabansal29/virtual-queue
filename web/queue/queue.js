@@ -20,8 +20,9 @@ function handleAdmitted(token) {
     navigating = true;
     if (es) es.close();
     if (pollTimer) clearInterval(pollTimer);
-    document.cookie = 'q_admission=' + token + '; path=/; max-age=1800; SameSite=Lax';
-    window.location.href = sessionStorage.getItem('q_target') || '/';
+    const destination = sessionStorage.getItem('q_target') || '/';
+    const separator = destination.includes('?') ? '&' : '?';
+    window.location.href = destination + separator + 'q_admission=' + encodeURIComponent(token);
 }
 
 function startSSE() {
