@@ -26,7 +26,7 @@ func main() {
 	defer stop()
 
 	rdb := store.NewQueueRedis(cfg.RedisAddr)
-	dw, err := internalaws.NewDynamoWriter(os.Getenv("DYNAMO_SESSIONS_TABLE"))
+	dw, err := internalaws.NewDynamoWriter(os.Getenv("DYNAMO_AUDIT_LOG_TABLE"))
 	if err != nil {
 		slog.Error("failed to init DynamoWriter", "error", err)
 	}

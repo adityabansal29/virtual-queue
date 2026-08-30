@@ -110,7 +110,7 @@ resource "aws_ecs_task_definition" "scheduler" {
     name = "scheduler", image = "${aws_ecr_repository.scheduler.repository_url}:latest", essential = true
     environment = [
       { name = "REDIS_ADDR", value = var.redis_queue_addr }, { name = "REDIS_TLS", value = "true" }, { name = "AWS_REGION", value = var.aws_region },
-      { name = "DYNAMO_SESSIONS_TABLE", value = "${var.environment}-queue-sessions" }, { name = "SQS_ADMISSION_QUEUE_URL", value = var.sqs_admission_queue_url }
+      { name = "DYNAMO_AUDIT_LOG_TABLE", value = "${var.environment}-queue-audit-log" }, { name = "SQS_ADMISSION_QUEUE_URL", value = var.sqs_admission_queue_url }
     ]
     secrets = [
       { name = "ADMISSION_SECRET", valueFrom = var.ssm_admission_secret_arn },

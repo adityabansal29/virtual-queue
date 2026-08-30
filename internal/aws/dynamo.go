@@ -42,8 +42,10 @@ func (dw *DynamoWriter) Write(ctx context.Context, r SessionRecord) error {
 	_, err := dw.client.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName: aws.String(dw.tableName),
 		Item: map[string]types.AttributeValue{
-			"ticketId":   &types.AttributeValueMemberS{Value: r.TicketID},
 			"eventId":    &types.AttributeValueMemberS{Value: r.EventID},
+			"timestamp":  &types.AttributeValueMemberS{Value: r.AdmittedAt.UTC().Format(time.RFC3339Nano)},
+			"action":     &types.AttributeValueMemberS{Value: "admitted"},
+			"ticketId":   &types.AttributeValueMemberS{Value: r.TicketID},
 			"jti":        &types.AttributeValueMemberS{Value: r.JTI},
 			"admittedAt": &types.AttributeValueMemberS{Value: r.AdmittedAt.UTC().Format(time.RFC3339)},
 		},
