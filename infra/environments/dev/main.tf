@@ -87,3 +87,17 @@ module "cloudfront" {
   queue_page_bucket_regional_domain_name = module.s3.queue_page_bucket_regional_domain_name
   queue_page_oac_id                      = module.s3.queue_page_oac_id
 }
+
+module "cloudfront_api" {
+  source      = "../../modules/cloudfront-api"
+  environment = var.environment
+  alb_dns     = module.ecs.alb_queue_api_dns
+  depends_on  = [module.ecs]
+}
+
+resource "aws_s3_object" "queue_index" {
+  bucket       = module.s3.queue_page_bucket_id
+  key          = "queue/index.html"
+  content      = replace(file("${path.root}/../../../web/queue/index.html"), "__QUEUE_API_BASE__", "https://${module.cloudfront_api.api_cf_domain}")
+  content_type = "text/html"
+}

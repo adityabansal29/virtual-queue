@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Virtual Queue</title>
   <!-- D-02: config injected first so queue.js reads it on load -->
-  <script>window.QUEUE_CONFIG = { apiBase: 'http://localhost:8080' };</script>
+  <script>window.QUEUE_CONFIG = { apiBase: location.hostname === 'localhost' ? 'http://localhost:8080' : '__QUEUE_API_BASE__' };</script>
   <link rel="stylesheet" href="queue.css">
   <script src="queue.js" defer></script>
 </head>
