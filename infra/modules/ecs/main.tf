@@ -16,7 +16,7 @@ resource "aws_iam_role" "ecs_task_execution" {
     policy = jsonencode({
       Version = "2012-10-17"
       Statement = [{
-        Effect = "Allow", Action = ["ssm:GetParameters"],
+        Effect   = "Allow", Action = ["ssm:GetParameters"],
         Resource = [var.ssm_admission_secret_arn, var.ssm_session_secret_arn]
       }]
     })
@@ -76,7 +76,7 @@ resource "aws_ecs_task_definition" "queueserver" {
   execution_role_arn       = aws_iam_role.ecs_task_execution.arn
   task_role_arn            = aws_iam_role.ecs_task_role.arn
   container_definitions = jsonencode([{
-    name = "queueserver", image = "${aws_ecr_repository.queueserver.repository_url}:latest", essential = true,
+    name         = "queueserver", image = "${aws_ecr_repository.queueserver.repository_url}:latest", essential = true,
     portMappings = [{ containerPort = 8080, protocol = "tcp" }]
     environment = [
       { name = "REDIS_ADDR", value = var.redis_queue_addr }, { name = "PORT", value = "8080" },
@@ -102,7 +102,7 @@ resource "aws_ecs_task_definition" "scheduler" {
       { name = "REDIS_ADDR", value = var.redis_queue_addr }, { name = "AWS_REGION", value = var.aws_region },
       { name = "DYNAMO_SESSIONS_TABLE", value = "${var.environment}-queue-sessions" }, { name = "SQS_ADMISSION_QUEUE_URL", value = var.sqs_admission_queue_url }
     ]
-    secrets = [{ name = "ADMISSION_SECRET", valueFrom = var.ssm_admission_secret_arn }]
+    secrets          = [{ name = "ADMISSION_SECRET", valueFrom = var.ssm_admission_secret_arn }]
     logConfiguration = { logDriver = "awslogs", options = merge(local.log_options, { "awslogs-group" = aws_cloudwatch_log_group.scheduler.name }) }
   }])
 }
@@ -116,7 +116,7 @@ resource "aws_ecs_task_definition" "stuborigin" {
   execution_role_arn       = aws_iam_role.ecs_task_execution.arn
   task_role_arn            = aws_iam_role.ecs_task_role.arn
   container_definitions = jsonencode([{
-    name = "stuborigin", image = "${aws_ecr_repository.stuborigin.repository_url}:latest", essential = true,
+    name         = "stuborigin", image = "${aws_ecr_repository.stuborigin.repository_url}:latest", essential = true,
     portMappings = [{ containerPort = 8081, protocol = "tcp" }]
     environment = [
       { name = "REDIS_ADDR", value = var.redis_origin_addr }, { name = "AWS_REGION", value = var.aws_region },
@@ -130,26 +130,26 @@ resource "aws_ecs_task_definition" "stuborigin" {
 }
 
 resource "aws_lb" "alb_queue_api" {
-  name = "${var.environment}-queue-api"
-  internal = false
+  name               = "${var.environment}-queue-api"
+  internal           = false
   load_balancer_type = "application"
-  security_groups = [var.sg_alb_public_id]
-  subnets = var.public_subnet_ids
+  security_groups    = [var.sg_alb_public_id]
+  subnets            = var.public_subnet_ids
 }
 
 resource "aws_lb_target_group" "queue_api" {
-  name = "${var.environment}-queue-api"
-  port = 8080
-  protocol = "HTTP"
+  name        = "${var.environment}-queue-api"
+  port        = 8080
+  protocol    = "HTTP"
   target_type = "ip"
-  vpc_id = var.vpc_id
+  vpc_id      = var.vpc_id
   health_check { path = "/health" }
 }
 
 resource "aws_lb_listener" "queue_api" {
   load_balancer_arn = aws_lb.alb_queue_api.arn
-  port = 80
-  protocol = "HTTP"
+  port              = 80
+  protocol          = "HTTP"
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.queue_api.arn
@@ -157,26 +157,26 @@ resource "aws_lb_listener" "queue_api" {
 }
 
 resource "aws_lb" "alb_stub_origin" {
-  name = "${var.environment}-stub-origin"
-  internal = false
+  name               = "${var.environment}-stub-origin"
+  internal           = false
   load_balancer_type = "application"
-  security_groups = [var.sg_alb_stub_origin_id]
-  subnets = var.public_subnet_ids
+  security_groups    = [var.sg_alb_stub_origin_id]
+  subnets            = var.public_subnet_ids
 }
 
 resource "aws_lb_target_group" "stub_origin" {
-  name = "${var.environment}-stub-origin"
-  port = 8081
-  protocol = "HTTP"
+  name        = "${var.environment}-stub-origin"
+  port        = 8081
+  protocol    = "HTTP"
   target_type = "ip"
-  vpc_id = var.vpc_id
+  vpc_id      = var.vpc_id
   health_check { path = "/health" }
 }
 
 resource "aws_lb_listener" "stub_origin" {
   load_balancer_arn = aws_lb.alb_stub_origin.arn
-  port = 80
-  protocol = "HTTP"
+  port              = 80
+  protocol          = "HTTP"
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.stub_origin.arn
@@ -184,11 +184,11 @@ resource "aws_lb_listener" "stub_origin" {
 }
 
 resource "aws_ecs_service" "queueserver" {
-  name = "${var.environment}-queueserver"
-  cluster = aws_ecs_cluster.main.id
+  name            = "${var.environment}-queueserver"
+  cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.queueserver.arn
-  desired_count = 1
-  launch_type = "FARGATE"
+  desired_count   = 1
+  launch_type     = "FARGATE"
   network_configuration {
     subnets          = var.private_subnet_ids
     security_groups  = [var.sg_ecs_tasks_id]
@@ -202,11 +202,11 @@ resource "aws_ecs_service" "queueserver" {
 }
 
 resource "aws_ecs_service" "scheduler" {
-  name = "${var.environment}-scheduler"
-  cluster = aws_ecs_cluster.main.id
+  name            = "${var.environment}-scheduler"
+  cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.scheduler.arn
-  desired_count = 1
-  launch_type = "FARGATE"
+  desired_count   = 1
+  launch_type     = "FARGATE"
   network_configuration {
     subnets          = var.private_subnet_ids
     security_groups  = [var.sg_ecs_tasks_id]
@@ -215,11 +215,11 @@ resource "aws_ecs_service" "scheduler" {
 }
 
 resource "aws_ecs_service" "stuborigin" {
-  name = "${var.environment}-stuborigin"
-  cluster = aws_ecs_cluster.main.id
+  name            = "${var.environment}-stuborigin"
+  cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.stuborigin.arn
-  desired_count = 1
-  launch_type = "FARGATE"
+  desired_count   = 1
+  launch_type     = "FARGATE"
   network_configuration {
     subnets          = var.private_subnet_ids
     security_groups  = [var.sg_ecs_tasks_id]
