@@ -86,7 +86,7 @@ resource "aws_ssm_parameter" "default_admit_rate" {
 resource "aws_ssm_parameter" "sse_threshold" {
   name  = "/virtual-queue/${var.environment}/SSE_THRESHOLD"
   type  = "String"
-  value = "200"
+  value = "10"
 }
 
 resource "aws_ssm_parameter" "scheduler_tick_secs" {
@@ -135,6 +135,7 @@ resource "aws_s3_object" "queue_js" {
   bucket       = module.s3.queue_page_bucket_id
   key          = "queue/queue.js"
   source       = "${path.root}/../../../web/queue/queue.js"
+  etag         = filemd5("${path.root}/../../../web/queue/queue.js")
   content_type = "application/javascript"
 }
 
