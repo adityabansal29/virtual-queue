@@ -35,6 +35,9 @@ func main() {
 
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"ok": true})
+	})
 
 	r.GET("/", middleware.QueueGuard(mwCfg), func(c *gin.Context) {
 		val, _ := c.Get("session")
