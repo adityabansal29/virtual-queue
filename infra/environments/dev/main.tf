@@ -31,6 +31,9 @@ module "ecs" {
   redis_origin_addr            = module.redis.redis_origin_primary_endpoint
   ssm_admission_secret_arn     = data.aws_ssm_parameter.admission_secret.arn
   ssm_session_secret_arn       = data.aws_ssm_parameter.session_secret.arn
+  ssm_default_admit_rate_arn   = aws_ssm_parameter.default_admit_rate.arn
+  ssm_sse_threshold_arn        = aws_ssm_parameter.sse_threshold.arn
+  ssm_event_id_arn             = aws_ssm_parameter.event_id.arn
   dynamodb_sessions_table_arn  = module.dynamodb.queue_sessions_table_arn
   dynamodb_events_table_arn    = module.dynamodb.queue_events_table_arn
   dynamodb_audit_log_table_arn = module.dynamodb.queue_audit_log_table_arn
@@ -72,6 +75,24 @@ data "aws_ssm_parameter" "admission_secret" {
 
 data "aws_ssm_parameter" "session_secret" {
   name = "/virtual-queue/dev/SESSION_SECRET"
+}
+
+resource "aws_ssm_parameter" "default_admit_rate" {
+  name  = "/virtual-queue/${var.environment}/DEFAULT_ADMIT_RATE"
+  type  = "String"
+  value = "3"
+}
+
+resource "aws_ssm_parameter" "sse_threshold" {
+  name  = "/virtual-queue/${var.environment}/SSE_THRESHOLD"
+  type  = "String"
+  value = "200"
+}
+
+resource "aws_ssm_parameter" "event_id" {
+  name  = "/virtual-queue/${var.environment}/EVENT_ID"
+  type  = "String"
+  value = "evt-001"
 }
 
 module "s3" {

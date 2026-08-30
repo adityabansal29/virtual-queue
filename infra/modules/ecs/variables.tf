@@ -73,6 +73,21 @@ variable "ssm_session_secret_arn" {
   default = ""
 }
 
+variable "ssm_default_admit_rate_arn" {
+  type    = string
+  default = ""
+}
+
+variable "ssm_sse_threshold_arn" {
+  type    = string
+  default = ""
+}
+
+variable "ssm_event_id_arn" {
+  type    = string
+  default = ""
+}
+
 variable "dynamodb_sessions_table_arn" {
   type    = string
   default = ""

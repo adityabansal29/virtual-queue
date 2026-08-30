@@ -2,6 +2,8 @@ package store
 
 import (
 	"context"
+	"crypto/tls"
+	"os"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -14,7 +16,11 @@ import (
 // so Docker health checks handle retry.
 // ponytail: no wrapper struct — add one when multiple ops need transactional grouping.
 func NewQueueRedis(addr string) *redis.Client {
-	client := redis.NewClient(&redis.Options{Addr: addr})
+	options := &redis.Options{Addr: addr}
+	if os.Getenv("REDIS_TLS") == "true" {
+		options.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
+	}
+	client := redis.NewClient(options)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

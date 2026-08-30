@@ -16,8 +16,14 @@ resource "aws_iam_role" "ecs_task_execution" {
     policy = jsonencode({
       Version = "2012-10-17"
       Statement = [{
-        Effect   = "Allow", Action = ["ssm:GetParameters"],
-        Resource = [var.ssm_admission_secret_arn, var.ssm_session_secret_arn]
+        Effect = "Allow", Action = ["ssm:GetParameters"],
+        Resource = [
+          var.ssm_admission_secret_arn,
+          var.ssm_session_secret_arn,
+          var.ssm_default_admit_rate_arn,
+          var.ssm_sse_threshold_arn,
+          var.ssm_event_id_arn,
+        ]
       }]
     })
   }
@@ -79,10 +85,14 @@ resource "aws_ecs_task_definition" "queueserver" {
     name         = "queueserver", image = "${aws_ecr_repository.queueserver.repository_url}:latest", essential = true,
     portMappings = [{ containerPort = 8080, protocol = "tcp" }]
     environment = [
-      { name = "REDIS_ADDR", value = var.redis_queue_addr }, { name = "PORT", value = "8080" },
+      { name = "REDIS_ADDR", value = var.redis_queue_addr }, { name = "REDIS_TLS", value = "true" }, { name = "PORT", value = "8080" },
       { name = "AWS_REGION", value = var.aws_region }, { name = "QUEUE_PAGE_URL", value = var.queue_page_url },
       { name = "QUEUE_PAGE_BUCKET_NAME", value = var.queue_page_bucket_name },
       { name = "CORS_ALLOWED_ORIGINS", value = var.cors_allowed_origins }
+    ]
+    secrets = [
+      { name = "DEFAULT_ADMIT_RATE", valueFrom = var.ssm_default_admit_rate_arn },
+      { name = "SSE_THRESHOLD", valueFrom = var.ssm_sse_threshold_arn }
     ]
     logConfiguration = { logDriver = "awslogs", options = merge(local.log_options, { "awslogs-group" = aws_cloudwatch_log_group.queueserver.name }) }
   }])
@@ -99,10 +109,13 @@ resource "aws_ecs_task_definition" "scheduler" {
   container_definitions = jsonencode([{
     name = "scheduler", image = "${aws_ecr_repository.scheduler.repository_url}:latest", essential = true
     environment = [
-      { name = "REDIS_ADDR", value = var.redis_queue_addr }, { name = "AWS_REGION", value = var.aws_region },
+      { name = "REDIS_ADDR", value = var.redis_queue_addr }, { name = "REDIS_TLS", value = "true" }, { name = "AWS_REGION", value = var.aws_region },
       { name = "DYNAMO_SESSIONS_TABLE", value = "${var.environment}-queue-sessions" }, { name = "SQS_ADMISSION_QUEUE_URL", value = var.sqs_admission_queue_url }
     ]
-    secrets          = [{ name = "ADMISSION_SECRET", valueFrom = var.ssm_admission_secret_arn }]
+    secrets = [
+      { name = "ADMISSION_SECRET", valueFrom = var.ssm_admission_secret_arn },
+      { name = "DEFAULT_ADMIT_RATE", valueFrom = var.ssm_default_admit_rate_arn }
+    ]
     logConfiguration = { logDriver = "awslogs", options = merge(local.log_options, { "awslogs-group" = aws_cloudwatch_log_group.scheduler.name }) }
   }])
 }
@@ -119,11 +132,13 @@ resource "aws_ecs_task_definition" "stuborigin" {
     name         = "stuborigin", image = "${aws_ecr_repository.stuborigin.repository_url}:latest", essential = true,
     portMappings = [{ containerPort = 8081, protocol = "tcp" }]
     environment = [
-      { name = "REDIS_ADDR", value = var.redis_origin_addr }, { name = "AWS_REGION", value = var.aws_region },
-      { name = "SECURE", value = "true" }, { name = "EVENT_ID", value = var.event_id }, { name = "QUEUE_JOIN_URL", value = var.queue_join_url }
+      { name = "REDIS_ADDR", value = var.redis_origin_addr }, { name = "REDIS_TLS", value = "true" }, { name = "AWS_REGION", value = var.aws_region },
+      { name = "SECURE", value = "true" }, { name = "QUEUE_JOIN_URL", value = var.queue_join_url }
     ]
     secrets = [
-      { name = "ADMISSION_SECRET", valueFrom = var.ssm_admission_secret_arn }, { name = "SESSION_SECRET", valueFrom = var.ssm_session_secret_arn }
+      { name = "ADMISSION_SECRET", valueFrom = var.ssm_admission_secret_arn },
+      { name = "SESSION_SECRET", valueFrom = var.ssm_session_secret_arn },
+      { name = "EVENT_ID", valueFrom = var.ssm_event_id_arn }
     ]
     logConfiguration = { logDriver = "awslogs", options = merge(local.log_options, { "awslogs-group" = aws_cloudwatch_log_group.stuborigin.name }) }
   }])
