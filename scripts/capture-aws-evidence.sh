@@ -66,6 +66,8 @@ const errors = [];
   const stopRank = Number(process.env.PROGRESS_STOP_RANK);
   const screenshotRanks = new Set(process.env.SCREENSHOT_RANKS.split(',').map(Number));
   const recordProgress = async () => {
+    if (page.url().startsWith(targetBase)) return null;
+    if (await page.locator('#pos').count() === 0) return null;
     const text = await page.locator('#pos').innerText();
     const match = text.match(/^(\d+) people ahead$/);
     if (!match) return null;
@@ -92,6 +94,7 @@ const errors = [];
     if (rank <= stopRank) break;
     await page.waitForTimeout(interval);
   }
+  await page.waitForURL(url => url.toString().startsWith(targetBase), { timeout: 60000 });
   const finalUrl = page.url();
   await page.screenshot({ path: `${out}/aws-queue-checkout.png`, fullPage: true });
   await browser.close();

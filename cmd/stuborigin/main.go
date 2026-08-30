@@ -38,7 +38,7 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 	})
 
-	r.GET("/", middleware.QueueGuard(mwCfg), func(c *gin.Context) {
+	checkoutHandler := func(c *gin.Context) {
 		val, _ := c.Get("session")
 		claims, ok := val.(*token.SessionClaims)
 		if !ok || claims == nil {
@@ -47,7 +47,9 @@ func main() {
 		}
 		c.Header("Content-Type", "text/html")
 		c.String(http.StatusOK, checkoutPage(claims.EventID, claims.Subject))
-	})
+	}
+	r.GET("/", middleware.QueueGuard(mwCfg), checkoutHandler)
+	r.GET("/checkout", middleware.QueueGuard(mwCfg), checkoutHandler)
 
 	if err := r.Run(":8081"); err != nil {
 		slog.Error("stub origin failed", "error", err)
