@@ -25,11 +25,12 @@ func main() {
 	originRedis := store.NewQueueRedis(cfg.RedisAddr)
 
 	mwCfg := middleware.Config{
-		AdmissionSecret: cfg.AdmissionSecret,
-		SessionSecret:   cfg.SessionSecret,
-		QueueJoinURL:    cfg.QueueJoinURL,
-		Secure:          cfg.Secure,
-		RDB:             originRedis,
+		AdmissionSecret:    cfg.AdmissionSecret,
+		SessionSecret:      cfg.SessionSecret,
+		QueueJoinURL:       cfg.QueueJoinURL,
+		Secure:             cfg.Secure,
+		RDB:                originRedis,
+		QueueValidationURL: cfg.QueueValidationURL,
 	}
 
 	r := gin.New()

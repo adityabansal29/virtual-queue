@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/adityabansal29/virtual-queue/internal/store"
+	"github.com/adityabansal29/virtual-queue/internal/token"
 	applog "github.com/adityabansal29/virtual-queue/pkg/log"
 )
 
@@ -24,11 +26,15 @@ func (h *Handler) QueueStatusPoll(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "ticket not found"})
 		return
 	}
+	if !h.statusAuthorized(c, ticketID) {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
 
 	// Check if already admitted: token written by scheduler to ticket hash.
-	// Read-once: delete immediately so a second poll doesn't double-deliver.
+	// Delivery is intentionally repeatable; origin-side JTI redemption is the
+	// one-time boundary and must remain possible after retries/SSE races.
 	if token, err := h.rdb.HGet(ctx, store.TicketKey(ticketID), "admission_token").Result(); err == nil {
-		h.rdb.HDel(ctx, store.TicketKey(ticketID), "admission_token")
 		c.JSON(http.StatusOK, gin.H{"type": "admitted", "token": token})
 		return
 	}
@@ -65,6 +71,10 @@ func (h *Handler) QueueStatusSSE(c *gin.Context) {
 	eventID, err := store.EventIDFromTicket(ctx, h.rdb, ticketID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "ticket not found"})
+		return
+	}
+	if !h.statusAuthorized(c, ticketID) {
+		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
 
@@ -131,4 +141,19 @@ func (h *Handler) QueueStatusSSE(c *gin.Context) {
 			return
 		}
 	}
+}
+
+func (h *Handler) statusAuthorized(c *gin.Context, ticketID string) bool {
+	// Ticket IDs are visible in the queue-page URL; require the HttpOnly
+	// capability cookie as a second factor before returning admission data.
+	cookie, err := c.Cookie("q_ticket")
+	if err != nil {
+		return false
+	}
+	parts := strings.SplitN(cookie, ".", 2)
+	if len(parts) != 2 || parts[0] != ticketID {
+		return false
+	}
+	stored, err := h.rdb.HGet(c.Request.Context(), store.TicketKey(ticketID), "status_secret_hash").Result()
+	return err == nil && token.StatusSecretMatches(stored, parts[1])
 }

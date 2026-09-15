@@ -23,6 +23,8 @@ func NewRouter(h *Handler) *gin.Engine {
 		for _, o := range allowed {
 			if origin == o {
 				c.Header("Access-Control-Allow-Origin", o)
+				// Required because queue.js sends the queue API's HttpOnly ticket cookie.
+				c.Header("Access-Control-Allow-Credentials", "true")
 				break
 			}
 		}
@@ -37,6 +39,7 @@ func NewRouter(h *Handler) *gin.Engine {
 
 	// Implemented endpoints
 	r.GET("/queue/join", h.Join)
+	r.POST("/admission/validate", h.ValidateAdmission)
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 	})

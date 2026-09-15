@@ -1,9 +1,12 @@
 package middleware
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/adityabansal29/virtual-queue/internal/config"
 	"github.com/adityabansal29/virtual-queue/internal/token"
@@ -14,11 +17,12 @@ import (
 // Config holds the parameters for the QueueGuard middleware.
 // RDB must point to the redis-origin client, NOT redis-queue.
 type Config struct {
-	AdmissionSecret string
-	SessionSecret   string
-	QueueJoinURL    string // GET /queue/join endpoint — linked from the error page
-	Secure          bool   // true in production (HTTPS), false for local HTTP dev
-	RDB             *redis.Client
+	AdmissionSecret    string
+	SessionSecret      string
+	QueueJoinURL       string // GET /queue/join endpoint — linked from the error page
+	Secure             bool   // true in production (HTTPS), false for local HTTP dev
+	RDB                *redis.Client
+	QueueValidationURL string
 }
 
 // QueueGuard enforces the two-cookie token model (DESIGN.md §8).
@@ -55,7 +59,33 @@ func QueueGuard(cfg Config) gin.HandlerFunc {
 			return
 		}
 
-		// 4. SETNX — one-time enforcement (TOKEN-04).
+		// Queue introspection is mandatory: it is the authoritative source of
+		// the ticket's event binding. The origin remains the redemption authority.
+		body, _ := json.Marshal(map[string]string{"ticketID": claims.TicketID, "token": ac})
+		req, reqErr := http.NewRequestWithContext(c.Request.Context(), http.MethodPost, cfg.QueueValidationURL, bytes.NewReader(body))
+		if reqErr != nil {
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+		req.Header.Set("Content-Type", "application/json")
+		resp, callErr := (&http.Client{Timeout: 2 * time.Second}).Do(req)
+		if callErr != nil || resp.StatusCode != http.StatusOK {
+			if resp != nil {
+				resp.Body.Close()
+			}
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+		var validated struct {
+			EventID string `json:"eventID"`
+		}
+		decodeErr := json.NewDecoder(resp.Body).Decode(&validated)
+		resp.Body.Close()
+		if decodeErr != nil || validated.EventID != claims.EventID {
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+
 		set, err := cfg.RDB.SetNX(c.Request.Context(), "token:"+claims.ID, "used", config.AdmissionUsedTTL).Result()
 		if err != nil || !set {
 			c.AbortWithStatus(http.StatusForbidden)

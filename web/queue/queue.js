@@ -26,7 +26,7 @@ function handleAdmitted(token) {
 }
 
 function startSSE() {
-    es = new EventSource(window.QUEUE_CONFIG.apiBase + '/queue/status/' + ticketId + '?mode=sse');
+    es = new EventSource(window.QUEUE_CONFIG.apiBase + '/queue/status/' + ticketId + '?mode=sse', { withCredentials: true });
     es.addEventListener('update', function(e) {
         const data = JSON.parse(e.data);
         if (data.type === 'position') renderPosition(data.value, data);
@@ -41,7 +41,7 @@ function startSSE() {
 
 async function pollOnce() {
     try {
-        const res  = await fetch(window.QUEUE_CONFIG.apiBase + '/queue/status/' + ticketId + '?mode=poll');
+        const res  = await fetch(window.QUEUE_CONFIG.apiBase + '/queue/status/' + ticketId + '?mode=poll', { credentials: 'include' });
         if (!res.ok) throw new Error('non-200');
         const data = await res.json();
 

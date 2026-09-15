@@ -32,7 +32,6 @@ const (
 // ---------------------------------------------------------------------------
 
 // QueueServerConfig holds config for the HTTP queue API server.
-// No secrets: the queue server does not sign or verify any tokens.
 type QueueServerConfig struct {
 	RedisAddr           string
 	Port                string
@@ -40,6 +39,9 @@ type QueueServerConfig struct {
 	DefaultAdmitRate    int64
 	QueuePageURL        string
 	QueuePageBucketName string
+	AdmissionSecret     string
+	// Secure enables HTTPS-only cookies and cross-origin SameSite=None cookies.
+	Secure bool
 }
 
 // SchedulerConfig holds config for the admission scheduler process.
@@ -52,11 +54,12 @@ type SchedulerConfig struct {
 
 // StubOriginConfig holds config for the stub checkout origin.
 type StubOriginConfig struct {
-	RedisAddr       string
-	AdmissionSecret string
-	SessionSecret   string
-	QueueJoinURL    string
-	Secure          bool
+	RedisAddr          string
+	AdmissionSecret    string
+	SessionSecret      string
+	QueueJoinURL       string
+	Secure             bool
+	QueueValidationURL string
 }
 
 // ---------------------------------------------------------------------------
@@ -64,6 +67,10 @@ type StubOriginConfig struct {
 // ---------------------------------------------------------------------------
 
 func LoadQueueServer() QueueServerConfig {
+	admissionSecret := os.Getenv("ADMISSION_SECRET")
+	if admissionSecret == "" {
+		panic("ADMISSION_SECRET must be set and non-empty")
+	}
 	return QueueServerConfig{
 		RedisAddr:           getEnvOrDefault("REDIS_ADDR", "redis-queue:6379"),
 		Port:                getEnvOrDefault("PORT", "8080"),
@@ -71,6 +78,8 @@ func LoadQueueServer() QueueServerConfig {
 		DefaultAdmitRate:    getEnvInt64("DEFAULT_ADMIT_RATE", 60),
 		QueuePageURL:        getEnvOrDefault("QUEUE_PAGE_URL", "http://localhost:8082/queue/"),
 		QueuePageBucketName: getEnvOrDefault("QUEUE_PAGE_BUCKET_NAME", ""),
+		AdmissionSecret:     admissionSecret,
+		Secure:              getEnvBool("SECURE", false),
 	}
 }
 
@@ -100,11 +109,12 @@ func LoadStubOrigin() StubOriginConfig {
 		panic("ADMISSION_SECRET and SESSION_SECRET must be different values")
 	}
 	return StubOriginConfig{
-		RedisAddr:       getEnvOrDefault("REDIS_ADDR", "redis-origin:6379"),
-		AdmissionSecret: admissionSecret,
-		SessionSecret:   sessionSecret,
-		QueueJoinURL:    getEnvOrDefault("QUEUE_JOIN_URL", "http://localhost:8080/queue/join"),
-		Secure:          getEnvBool("SECURE", false),
+		RedisAddr:          getEnvOrDefault("REDIS_ADDR", "redis-origin:6379"),
+		AdmissionSecret:    admissionSecret,
+		SessionSecret:      sessionSecret,
+		QueueJoinURL:       getEnvOrDefault("QUEUE_JOIN_URL", "http://localhost:8080/queue/join"),
+		Secure:             getEnvBool("SECURE", false),
+		QueueValidationURL: getEnvOrDefault("QUEUE_VALIDATION_URL", "http://localhost:8080/admission/validate"),
 	}
 }
 

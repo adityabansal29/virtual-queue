@@ -85,7 +85,8 @@ resource "aws_ecs_task_definition" "queueserver" {
     name         = "queueserver", image = "${aws_ecr_repository.queueserver.repository_url}:latest", essential = true,
     portMappings = [{ containerPort = 8080, protocol = "tcp" }]
     environment = [
-      { name = "REDIS_ADDR", value = var.redis_queue_addr }, { name = "REDIS_TLS", value = "true" }, { name = "PORT", value = "8080" },
+      # Secure=true is required for the production cross-origin q_ticket cookie.
+      { name = "REDIS_ADDR", value = var.redis_queue_addr }, { name = "REDIS_TLS", value = "true" }, { name = "PORT", value = "8080" }, { name = "SECURE", value = "true" },
       { name = "AWS_REGION", value = var.aws_region }, { name = "QUEUE_PAGE_URL", value = var.queue_page_url },
       { name = "QUEUE_PAGE_BUCKET_NAME", value = var.queue_page_bucket_name },
       { name = "CORS_ALLOWED_ORIGINS", value = var.cors_allowed_origins }

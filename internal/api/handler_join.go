@@ -2,9 +2,12 @@ package api
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -15,6 +18,7 @@ import (
 
 	"github.com/adityabansal29/virtual-queue/internal/config"
 	"github.com/adityabansal29/virtual-queue/internal/store"
+	"github.com/adityabansal29/virtual-queue/internal/token"
 	applog "github.com/adityabansal29/virtual-queue/pkg/log"
 )
 
@@ -47,17 +51,34 @@ func (h *Handler) Join(c *gin.Context) {
 		return
 	}
 
-	ticketID, _ := c.Cookie("q_ticket")
-	if !h.doesTicketExist(c, eventID, ticketID) {
+	ticketCookie, _ := c.Cookie("q_ticket")
+	ticketID := ticketCookie
+	if i := strings.IndexByte(ticketCookie, '.'); i >= 0 {
+		ticketID = ticketCookie[:i]
+	}
+
+	if !h.doesTicketExist(c, eventID, ticketID) || !strings.Contains(ticketCookie, ".") {
 		var err error
-		ticketID, err = h.createTicket(c.Request.Context(), eventID)
+		var statusSecret string
+		ticketID, statusSecret, err = h.createTicket(c.Request.Context(), eventID)
 		if err != nil {
 			applog.ErrorWithContext(c.Request.Context(), "Join: createTicket failed", "eventId", eventID, "error", err)
 			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "queue unavailable"})
 			return
 		}
-		c.SetCookie("q_ticket", ticketID, config.QTicketCookieMaxAge, "/", "", false, true)
+
+		// Production queue page/API calls are cross-origin; SameSite=None
+		// permits the q_ticket cookie on credentialed HTTPS requests.
+		// Browsers require Secure whenever SameSite=None is used.
+		if h.cfg.Secure {
+			c.SetSameSite(http.SameSiteNoneMode)
+		}
+
+		// Cookie format is ticketID.statusSecret. It authenticates status polling
+		// without putting the admission JWT in the queue-status request.
+		c.SetCookie("q_ticket", ticketID+"."+statusSecret, config.QTicketCookieMaxAge, "/", "", h.cfg.Secure, true)
 	}
+
 	target = targetWithEventID(target, eventID)
 
 	if h.s3Client != nil && h.cfg.QueuePageBucketName != "" {
@@ -102,15 +123,21 @@ func (h *Handler) doesTicketExist(c *gin.Context, eventID, ticketID string) bool
 }
 
 // createTicket writes the ticket to the sorted set and hash, returning the ticketID.
-func (h *Handler) createTicket(ctx context.Context, eventID string) (string, error) {
+func (h *Handler) createTicket(ctx context.Context, eventID string) (string, string, error) {
 	ticketID := uuid.New().String()
+	secretBytes := make([]byte, 32)
+	if _, err := rand.Read(secretBytes); err != nil {
+		return "", "", err
+	}
+	// The status secret is independent from the ticket ID and admission JWT.
+	statusSecret := base64.RawURLEncoding.EncodeToString(secretBytes)
 	score := float64(time.Now().UnixMilli())
 
 	if err := h.rdb.ZAdd(ctx, store.QueueKey(eventID), redis.Z{
 		Score:  score,
 		Member: ticketID,
 	}).Err(); err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	// Non-fatal — status endpoint works via ZRank even if this fails.
@@ -118,8 +145,9 @@ func (h *Handler) createTicket(ctx context.Context, eventID string) (string, err
 		"ticketId", ticketID,
 		"eventId", eventID,
 		"joinTime", score,
+		"status_secret_hash", token.HashStatusSecret(statusSecret),
 	) //nolint:errcheck
 	h.rdb.Expire(ctx, store.TicketKey(ticketID), config.TicketKeyTTL) //nolint:errcheck
 
-	return ticketID, nil
+	return ticketID, statusSecret, nil
 }
