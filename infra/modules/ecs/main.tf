@@ -93,6 +93,7 @@ resource "aws_ecs_task_definition" "queueserver" {
       { name = "CORS_ALLOWED_ORIGINS", value = var.cors_allowed_origins }
     ]
     secrets = [
+      { name = "ADMISSION_SECRET", valueFrom = var.ssm_admission_secret_arn },
       { name = "DEFAULT_ADMIT_RATE", valueFrom = var.ssm_default_admit_rate_arn },
       { name = "SSE_THRESHOLD", valueFrom = var.ssm_sse_threshold_arn },
       { name = "INTERNAL_API_TOKEN", valueFrom = var.ssm_internal_api_token_arn }
