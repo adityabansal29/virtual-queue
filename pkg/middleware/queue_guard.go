@@ -23,6 +23,7 @@ type Config struct {
 	Secure             bool   // true in production (HTTPS), false for local HTTP dev
 	RDB                *redis.Client
 	QueueValidationURL string
+	InternalAPIToken   string
 }
 
 // QueueGuard enforces the two-cookie token model (DESIGN.md §8).
@@ -68,6 +69,9 @@ func QueueGuard(cfg Config) gin.HandlerFunc {
 			return
 		}
 		req.Header.Set("Content-Type", "application/json")
+		if cfg.InternalAPIToken != "" {
+			req.Header.Set("X-Internal-API-Token", cfg.InternalAPIToken)
+		}
 		resp, callErr := (&http.Client{Timeout: 2 * time.Second}).Do(req)
 		if callErr != nil || resp.StatusCode != http.StatusOK {
 			if resp != nil {
@@ -86,6 +90,7 @@ func QueueGuard(cfg Config) gin.HandlerFunc {
 			return
 		}
 
+		// 4. SETNX — one-time enforcement (TOKEN-04).
 		set, err := cfg.RDB.SetNX(c.Request.Context(), "token:"+claims.ID, "used", config.AdmissionUsedTTL).Result()
 		if err != nil || !set {
 			c.AbortWithStatus(http.StatusForbidden)

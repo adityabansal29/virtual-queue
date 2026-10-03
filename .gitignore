@@ -27,6 +27,10 @@ go.work.sum
 # env file
 .env
 
+# Codex / GSD local tooling
+.codex/
+.gsd/
+
 # Editor/IDE
 # .idea/
 # .vscode/

@@ -22,3 +22,8 @@ variable "redis_node_type" {
   type    = string
   default = "cache.t3.micro"
 }
+
+variable "s3_force_destroy" {
+  type    = bool
+  default = false
+}

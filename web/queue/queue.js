@@ -12,6 +12,11 @@ let es         = null;
 let navigating = false; // guard against duplicate handleAdmitted calls (UI-05)
 let admitRatePerMin = 60; // 1/sec default; updated from poll response admitRate field
 
+function showTransport(mode) {
+    document.getElementById('transport').textContent =
+        mode === 'sse' ? 'Updates: live (SSE)' : 'Updates: polling';
+}
+
 // UI-SPEC: loading state before first poll returns
 document.getElementById('pos').textContent = 'Checking your position…';
 
@@ -26,6 +31,7 @@ function handleAdmitted(token) {
 }
 
 function startSSE() {
+    showTransport('sse');
     es = new EventSource(window.QUEUE_CONFIG.apiBase + '/queue/status/' + ticketId + '?mode=sse', { withCredentials: true });
     es.addEventListener('update', function(e) {
         const data = JSON.parse(e.data);
@@ -40,6 +46,7 @@ function startSSE() {
 }
 
 async function pollOnce() {
+    showTransport('poll');
     try {
         const res  = await fetch(window.QUEUE_CONFIG.apiBase + '/queue/status/' + ticketId + '?mode=poll', { credentials: 'include' });
         if (!res.ok) throw new Error('non-200');

@@ -13,6 +13,10 @@ import (
 // consuming it. One-time redemption remains the origin's responsibility, so
 // retries can safely call this endpoint before origin-side SETNX.
 func (h *Handler) ValidateAdmission(c *gin.Context) {
+	if h.cfg.InternalAPIToken != "" && c.GetHeader("X-Internal-API-Token") != h.cfg.InternalAPIToken {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
 	var req struct {
 		TicketID string `json:"ticketID"`
 		Token    string `json:"token"`

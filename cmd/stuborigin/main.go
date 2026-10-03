@@ -31,6 +31,7 @@ func main() {
 		Secure:             cfg.Secure,
 		RDB:                originRedis,
 		QueueValidationURL: cfg.QueueValidationURL,
+		InternalAPIToken:   cfg.InternalAPIToken,
 	}
 
 	r := gin.New()

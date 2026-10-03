@@ -26,3 +26,20 @@ Browser evidence:
 - [JavaScript and CloudWatch evidence](test-screenshots/aws-queue-evidence.txt)
 
 The repeatable capture command is `./scripts/capture-aws-evidence.sh`. It seeds 20 users in parallel, captures one timestamped screenshot per rank through `0` (set `PROGRESS_STOP_RANK` to choose another endpoint), records browser console/network events, and collects filtered `/ecs/dev/queueserver` and `/ecs/dev/scheduler` CloudWatch logs after the 20-second scheduler tick. The current captured run shows ranks `20` through `10`; the JavaScript network trace proves `poll -> 200 -> sse -> 200`, and the scheduler log records admissions for the isolated evidence event.
+
+For a lightweight dev/prod smoke test, set the queue API CloudFront URL and run:
+
+```bash
+QUEUE_API_BASE=https://<queue-api-cloudfront-domain> ./scripts/test-aws-queue.sh
+```
+
+The script creates 20 separate cookie jars and join requests, then verifies the
+20th user can authenticate both poll and SSE status calls and receives an
+admission event. Set `WAIT_SECS` higher for a low-rate dev scheduler.
+
+Application configuration is stored in eight SSM parameters per environment:
+`ADMISSION_SECRET`, `SESSION_SECRET`, `INTERNAL_API_TOKEN`,
+`DEFAULT_ADMIT_RATE`, `SSE_THRESHOLD`, `SCHEDULER_TICK_SECS`,
+`QUEUE_JOIN_URL`, and `QUEUE_VALIDATION_URL`. Use
+`scripts/set-ssm-config.sh` to update them. Use `scripts/set-cloudfront-kvs.sh`
+to copy the two edge secrets into CloudFront KVS after Terraform creates it.

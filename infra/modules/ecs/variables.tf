@@ -88,6 +88,11 @@ variable "ssm_scheduler_tick_secs_arn" {
   default = ""
 }
 
+variable "ssm_internal_api_token_arn" {
+  type    = string
+  default = ""
+}
+
 variable "dynamodb_sessions_table_arn" {
   type    = string
   default = ""
@@ -124,6 +129,11 @@ variable "queue_page_url" {
 }
 
 variable "queue_join_url" {
+  type    = string
+  default = ""
+}
+
+variable "queue_validation_url" {
   type    = string
   default = ""
 }

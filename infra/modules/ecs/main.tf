@@ -23,6 +23,7 @@ resource "aws_iam_role" "ecs_task_execution" {
           var.ssm_default_admit_rate_arn,
           var.ssm_sse_threshold_arn,
           var.ssm_scheduler_tick_secs_arn,
+          var.ssm_internal_api_token_arn,
         ]
       }]
     })
@@ -44,7 +45,7 @@ resource "aws_iam_role" "ecs_task_role" {
       Statement = [
         { Effect = "Allow", Action = ["dynamodb:PutItem"], Resource = [var.dynamodb_sessions_table_arn, var.dynamodb_events_table_arn, var.dynamodb_audit_log_table_arn] },
         { Effect = "Allow", Action = ["sqs:SendMessage"], Resource = [var.sqs_admission_queue_arn] },
-        { Effect = "Allow", Action = ["s3:HeadObject", "s3:GetObject", "s3:PutObject"], Resource = [var.queue_page_bucket_arn] }
+        { Effect = "Allow", Action = ["s3:HeadObject", "s3:GetObject", "s3:PutObject"], Resource = ["${var.queue_page_bucket_arn}/*"] }
       ]
     })
   }
@@ -93,7 +94,8 @@ resource "aws_ecs_task_definition" "queueserver" {
     ]
     secrets = [
       { name = "DEFAULT_ADMIT_RATE", valueFrom = var.ssm_default_admit_rate_arn },
-      { name = "SSE_THRESHOLD", valueFrom = var.ssm_sse_threshold_arn }
+      { name = "SSE_THRESHOLD", valueFrom = var.ssm_sse_threshold_arn },
+      { name = "INTERNAL_API_TOKEN", valueFrom = var.ssm_internal_api_token_arn }
     ]
     logConfiguration = { logDriver = "awslogs", options = merge(local.log_options, { "awslogs-group" = aws_cloudwatch_log_group.queueserver.name }) }
   }])
@@ -135,11 +137,12 @@ resource "aws_ecs_task_definition" "stuborigin" {
     portMappings = [{ containerPort = 8081, protocol = "tcp" }]
     environment = [
       { name = "REDIS_ADDR", value = var.redis_origin_addr }, { name = "REDIS_TLS", value = "true" }, { name = "AWS_REGION", value = var.aws_region },
-      { name = "SECURE", value = "true" }, { name = "QUEUE_JOIN_URL", value = var.queue_join_url }
+      { name = "SECURE", value = "true" }, { name = "QUEUE_JOIN_URL", value = var.queue_join_url }, { name = "QUEUE_VALIDATION_URL", value = var.queue_validation_url }
     ]
     secrets = [
       { name = "ADMISSION_SECRET", valueFrom = var.ssm_admission_secret_arn },
       { name = "SESSION_SECRET", valueFrom = var.ssm_session_secret_arn },
+      { name = "INTERNAL_API_TOKEN", valueFrom = var.ssm_internal_api_token_arn },
     ]
     logConfiguration = { logDriver = "awslogs", options = merge(local.log_options, { "awslogs-group" = aws_cloudwatch_log_group.stuborigin.name }) }
   }])

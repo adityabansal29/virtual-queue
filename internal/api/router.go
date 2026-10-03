@@ -55,10 +55,19 @@ func NewRouter(h *Handler) *gin.Engine {
 
 	r.POST("/queue/exit", h.QueueExit)
 
-	r.PUT("/queue/rate/:eventId", h.UpdateRate)
-	r.GET("/queue/config/:eventId", h.GetConfig)
-	r.GET("/queue/events", h.GetEvents)
-	r.GET("/queue/events/:id/page-upload-url", h.GetPageUploadURL)
+	admin := func(next gin.HandlerFunc) gin.HandlerFunc {
+		return func(c *gin.Context) {
+			if h.cfg.InternalAPIToken != "" && c.GetHeader("X-Internal-API-Token") != h.cfg.InternalAPIToken {
+				c.AbortWithStatus(http.StatusForbidden)
+				return
+			}
+			next(c)
+		}
+	}
+	r.PUT("/queue/rate/:eventId", admin(h.UpdateRate))
+	r.GET("/queue/config/:eventId", admin(h.GetConfig))
+	r.GET("/queue/events", admin(h.GetEvents))
+	r.GET("/queue/events/:id/page-upload-url", admin(h.GetPageUploadURL))
 
 	return r
 }

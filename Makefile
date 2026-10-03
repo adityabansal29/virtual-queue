@@ -1,4 +1,4 @@
-.PHONY: up down logs verify test build
+.PHONY: up down logs verify test build simulate
 
 up:
 	docker compose up --build -d
@@ -17,3 +17,6 @@ test:
 
 build:
 	go build ./...
+
+simulate:
+	python3 scripts/simulate-queue.py

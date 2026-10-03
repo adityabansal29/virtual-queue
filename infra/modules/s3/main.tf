@@ -1,6 +1,6 @@
 resource "aws_s3_bucket" "queue_page" {
   bucket        = "${var.environment}-virtual-queue-content"
-  force_destroy = true
+  force_destroy = var.force_destroy
 }
 
 resource "aws_s3_bucket_public_access_block" "queue_page" {

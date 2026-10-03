@@ -31,9 +31,10 @@ module "ecs" {
   redis_origin_addr            = module.redis.redis_origin_primary_endpoint
   ssm_admission_secret_arn     = data.aws_ssm_parameter.admission_secret.arn
   ssm_session_secret_arn       = data.aws_ssm_parameter.session_secret.arn
-  ssm_default_admit_rate_arn   = aws_ssm_parameter.default_admit_rate.arn
-  ssm_sse_threshold_arn        = aws_ssm_parameter.sse_threshold.arn
-  ssm_scheduler_tick_secs_arn  = aws_ssm_parameter.scheduler_tick_secs.arn
+  ssm_default_admit_rate_arn   = data.aws_ssm_parameter.default_admit_rate.arn
+  ssm_sse_threshold_arn        = data.aws_ssm_parameter.sse_threshold.arn
+  ssm_scheduler_tick_secs_arn  = data.aws_ssm_parameter.scheduler_tick_secs.arn
+  ssm_internal_api_token_arn   = data.aws_ssm_parameter.internal_api_token.arn
   dynamodb_sessions_table_arn  = module.dynamodb.queue_sessions_table_arn
   dynamodb_events_table_arn    = module.dynamodb.queue_events_table_arn
   dynamodb_audit_log_table_arn = module.dynamodb.queue_audit_log_table_arn
@@ -43,6 +44,8 @@ module "ecs" {
   queue_page_url               = "https://${module.cloudfront.queue_page_cf_domain}/queue/index.html"
   queue_page_bucket_name       = module.s3.queue_page_bucket_id
   cors_allowed_origins         = "https://${module.cloudfront.queue_page_cf_domain}"
+  queue_join_url               = data.aws_ssm_parameter.queue_join_url.value
+  queue_validation_url         = data.aws_ssm_parameter.queue_validation_url.value
 }
 
 module "redis" {
@@ -69,35 +72,44 @@ module "sqs" {
 #   --type SecureString --value "<secret>" --region ap-south-1
 # aws ssm put-parameter --name "/virtual-queue/dev/SESSION_SECRET" \
 #   --type SecureString --value "<secret>" --region ap-south-1
+# aws ssm put-parameter --name "/virtual-queue/dev/INTERNAL_API_TOKEN" \
+#   --type SecureString --value "<secret>" --region ap-south-1
 data "aws_ssm_parameter" "admission_secret" {
-  name = "/virtual-queue/dev/ADMISSION_SECRET"
+  name = "/virtual-queue/${var.environment}/ADMISSION_SECRET"
 }
 
 data "aws_ssm_parameter" "session_secret" {
-  name = "/virtual-queue/dev/SESSION_SECRET"
+  name = "/virtual-queue/${var.environment}/SESSION_SECRET"
 }
 
-resource "aws_ssm_parameter" "default_admit_rate" {
-  name  = "/virtual-queue/${var.environment}/DEFAULT_ADMIT_RATE"
-  type  = "String"
-  value = "1"
+data "aws_ssm_parameter" "internal_api_token" {
+  name = "/virtual-queue/${var.environment}/INTERNAL_API_TOKEN"
 }
 
-resource "aws_ssm_parameter" "sse_threshold" {
-  name  = "/virtual-queue/${var.environment}/SSE_THRESHOLD"
-  type  = "String"
-  value = "10"
+data "aws_ssm_parameter" "default_admit_rate" {
+  name = "/virtual-queue/${var.environment}/DEFAULT_ADMIT_RATE"
 }
 
-resource "aws_ssm_parameter" "scheduler_tick_secs" {
-  name  = "/virtual-queue/${var.environment}/SCHEDULER_TICK_SECS"
-  type  = "String"
-  value = "20"
+data "aws_ssm_parameter" "sse_threshold" {
+  name = "/virtual-queue/${var.environment}/SSE_THRESHOLD"
+}
+
+data "aws_ssm_parameter" "scheduler_tick_secs" {
+  name = "/virtual-queue/${var.environment}/SCHEDULER_TICK_SECS"
+}
+
+data "aws_ssm_parameter" "queue_join_url" {
+  name = "/virtual-queue/${var.environment}/QUEUE_JOIN_URL"
+}
+
+data "aws_ssm_parameter" "queue_validation_url" {
+  name = "/virtual-queue/${var.environment}/QUEUE_VALIDATION_URL"
 }
 
 module "s3" {
-  source      = "../../modules/s3"
-  environment = var.environment
+  source        = "../../modules/s3"
+  environment   = var.environment
+  force_destroy = var.s3_force_destroy
 }
 
 module "cloudfront" {
@@ -129,6 +141,7 @@ resource "aws_s3_object" "queue_index" {
   key          = "queue/index.html"
   content      = replace(file("${path.root}/../../../web/queue/index.html"), "__QUEUE_API_BASE__", "https://${module.cloudfront_api.queue_api_cf_domain}")
   content_type = "text/html"
+  etag         = md5(replace(file("${path.root}/../../../web/queue/index.html"), "__QUEUE_API_BASE__", "https://${module.cloudfront_api.queue_api_cf_domain}"))
 }
 
 resource "aws_s3_object" "queue_js" {
@@ -144,4 +157,5 @@ resource "aws_s3_object" "queue_css" {
   key          = "queue/queue.css"
   source       = "${path.root}/../../../web/queue/queue.css"
   content_type = "text/css"
+  etag         = filemd5("${path.root}/../../../web/queue/queue.css")
 }

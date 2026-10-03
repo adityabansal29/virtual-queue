@@ -34,6 +34,12 @@ main {
     margin: 0 0 16px;
 }
 
+#transport {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0 0 16px;
+}
+
 #constrained {
     display: none;
     background: #fef3c7;

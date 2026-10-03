@@ -34,7 +34,6 @@ func (h *Handler) GetPageUploadURL(c *gin.Context) {
 
 // UpdateRate handles PUT /queue/rate/:eventId.
 // Sets rate and optional capacity in Redis.
-// ponytail: no auth — add bearer token or IP allowlist before production (T-04-01).
 func (h *Handler) UpdateRate(c *gin.Context) {
 	eventID := c.Param("eventId")
 	ctx := c.Request.Context()
